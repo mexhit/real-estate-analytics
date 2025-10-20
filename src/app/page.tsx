@@ -13,6 +13,7 @@ import {
   Typography,
   Box,
   CircularProgress,
+  Button,
 } from "@mui/material";
 import { propertiesApi } from "@/api/properties";
 
@@ -37,6 +38,7 @@ export default function ProductsPage() {
   React.useEffect(() => {
     const fetchProducts = async () => {
       try {
+        setLoading(true);
         const res = await propertiesApi.getPaginatedProperties({
           limit: rowsPerPage,
           page,
@@ -44,6 +46,7 @@ export default function ProductsPage() {
         const data = res.data;
         setProducts(data);
         setTotalProducts(res.total);
+        setLoading(false);
       } catch (err) {
         setError((err as Error).message);
       } finally {
@@ -109,9 +112,15 @@ export default function ProductsPage() {
                     <TableCell>{p.description}</TableCell>
                     <TableCell>{p.price}</TableCell>
                     <TableCell>
-                      <a href={p.url} target="_blank" rel="noopener noreferrer">
-                        {p.url}
-                      </a>
+                      <Button
+                        href={p.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="outlined"
+                        size="small"
+                      >
+                        Open
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
