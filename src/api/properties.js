@@ -1,10 +1,10 @@
 import axios from "axios";
 
 class PropertiesApi {
-  getPaginatedProperties({ limit, page, providerId }) {
+  getPaginatedProperties({ limit, page }) {
     return axios
       .get(`http://localhost:3009/properties`, {
-        params: { providerId, limit, page },
+        params: { limit, page },
       })
       .then((data) => data.data);
   }

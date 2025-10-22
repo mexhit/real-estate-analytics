@@ -16,6 +16,7 @@ import {
   CircularProgress,
   Button,
 } from "@mui/material";
+import { useSearchParams, useRouter } from "next/navigation";
 import { propertiesApi } from "@/api/properties";
 
 interface Product {
@@ -29,13 +30,29 @@ interface Product {
 }
 
 export default function ProductsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Get initial page from URL (default 0)
+  const initialPage = parseInt(searchParams.get("page") || "0", 10);
+
   const [products, setProducts] = React.useState<Product[]>([]);
   const [totalProducts, setTotalProducts] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
-  const [page, setPage] = React.useState(0);
+  const [page, setPage] = React.useState(initialPage);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
+
+  // Update URL when page changes
+  const updateUrl = React.useCallback(
+    (newPage: number) => {
+      const params = new URLSearchParams(window.location.search);
+      params.set("page", String(newPage));
+      router.replace(`?${params.toString()}`);
+    },
+    [router],
+  );
 
   React.useEffect(() => {
     const fetchProducts = async () => {
@@ -43,12 +60,10 @@ export default function ProductsPage() {
         setLoading(true);
         const res = await propertiesApi.getPaginatedProperties({
           limit: rowsPerPage,
-          page: page + 1,
+          page: page + 1, // API is 1-based
         });
-        const data = res.data;
-        setProducts(data);
+        setProducts(res.data);
         setTotalProducts(res.total);
-        setLoading(false);
       } catch (err) {
         setError((err as Error).message);
       } finally {
@@ -59,12 +74,18 @@ export default function ProductsPage() {
     fetchProducts();
   }, [page, rowsPerPage]);
 
-  const handleChangePage = (_: unknown, newPage: number) => setPage(newPage);
+  const handleChangePage = (_: unknown, newPage: number) => {
+    setPage(newPage);
+    updateUrl(newPage);
+  };
+
   const handleChangeRowsPerPage = (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
+    const newLimit = parseInt(event.target.value, 10);
+    setRowsPerPage(newLimit);
     setPage(0);
+    updateUrl(0);
   };
 
   if (loading) {
