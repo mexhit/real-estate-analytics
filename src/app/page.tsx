@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -23,6 +24,7 @@ interface Product {
   title: string;
   description: string;
   price: number;
+  providerPropertyCount: string;
   url: string;
 }
 
@@ -41,7 +43,7 @@ export default function ProductsPage() {
         setLoading(true);
         const res = await propertiesApi.getPaginatedProperties({
           limit: rowsPerPage,
-          page,
+          page: page + 1,
         });
         const data = res.data;
         setProducts(data);
@@ -98,6 +100,7 @@ export default function ProductsPage() {
                 <TableCell>Title</TableCell>
                 <TableCell>Description</TableCell>
                 <TableCell>Price (€)</TableCell>
+                <TableCell>Repost</TableCell>
                 <TableCell>URL</TableCell>
               </TableRow>
             </TableHead>
@@ -107,10 +110,22 @@ export default function ProductsPage() {
                 .map((p) => (
                   <TableRow key={p.id}>
                     <TableCell>{p.id}</TableCell>
-                    <TableCell>{p.providerId}</TableCell>
+                    <TableCell>
+                      <Link
+                        href={`/providers/${p.providerId}`}
+                        style={{
+                          color: "#1976d2",
+                          textDecoration: "none",
+                          fontWeight: 500,
+                        }}
+                      >
+                        {p.providerId}
+                      </Link>
+                    </TableCell>
                     <TableCell>{p.title}</TableCell>
                     <TableCell>{p.description}</TableCell>
                     <TableCell>{p.price}</TableCell>
+                    <TableCell>{p.providerPropertyCount}</TableCell>
                     <TableCell>
                       <Button
                         href={p.url}
