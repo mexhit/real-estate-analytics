@@ -16,6 +16,7 @@ import {
   CircularProgress,
   Button,
 } from "@mui/material";
+import { NewReleases } from "@mui/icons-material";
 import { useSearchParams, useRouter } from "next/navigation";
 import { propertiesApi } from "@/api/properties";
 
@@ -27,6 +28,7 @@ interface Product {
   price: number;
   providerPropertyCount: string;
   url: string;
+  seen: boolean;
 }
 
 export default function ProductsPage() {
@@ -116,6 +118,7 @@ export default function ProductsPage() {
           <Table>
             <TableHead>
               <TableRow>
+                <TableCell></TableCell> {/* Column for the icon */}
                 <TableCell>ID</TableCell>
                 <TableCell>Provider ID</TableCell>
                 <TableCell>Title</TableCell>
@@ -126,40 +129,51 @@ export default function ProductsPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {products
-                /*.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)*/
-                .map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell>{p.id}</TableCell>
-                    <TableCell>
-                      <Link
-                        href={`/providers/${p.providerId}`}
-                        style={{
-                          color: "#1976d2",
-                          textDecoration: "none",
-                          fontWeight: 500,
-                        }}
-                      >
-                        {p.providerId}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{p.title}</TableCell>
-                    <TableCell>{p.description}</TableCell>
-                    <TableCell>{p.price}</TableCell>
-                    <TableCell>{p.providerPropertyCount}</TableCell>
-                    <TableCell>
-                      <Button
-                        href={p.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        variant="outlined"
-                        size="small"
-                      >
-                        Open
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+              {products.map((p) => (
+                <TableRow
+                  key={p.id}
+                  sx={{
+                    backgroundColor: p.seen ? "inherit" : "#f9f9f9", // Subtle highlight
+                  }}
+                >
+                  <TableCell width={40} align="center">
+                    {!p.seen && (
+                      <NewReleases
+                        fontSize="small"
+                        sx={{ color: "#00bcd4" }} // bright green, fresh "new" feel
+                      />
+                    )}
+                  </TableCell>
+                  <TableCell>{p.id}</TableCell>
+                  <TableCell>
+                    <Link
+                      href={`/providers/${p.providerId}`}
+                      style={{
+                        color: "#1976d2",
+                        textDecoration: "none",
+                        fontWeight: 500,
+                      }}
+                    >
+                      {p.providerId}
+                    </Link>
+                  </TableCell>
+                  <TableCell>{p.title}</TableCell>
+                  <TableCell>{p.description}</TableCell>
+                  <TableCell>{p.price}</TableCell>
+                  <TableCell>{p.providerPropertyCount}</TableCell>
+                  <TableCell>
+                    <Button
+                      href={p.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      variant="outlined"
+                      size="small"
+                    >
+                      Open
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </TableContainer>
