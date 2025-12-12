@@ -15,6 +15,8 @@ import {
   Box,
   CircularProgress,
   Button,
+  Chip,
+  Tooltip,
 } from "@mui/material";
 import { NewReleases } from "@mui/icons-material";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -119,65 +121,101 @@ export default function ProductsPage() {
 
   return (
     <Box p={3}>
-      <Typography variant="h5" gutterBottom>
-        Products Table
+      <Typography variant="h5" fontWeight={600} mb={2}>
+        Products
       </Typography>
 
-      <Paper>
+      <Paper elevation={1} sx={{ borderRadius: 2, overflow: "hidden" }}>
         <TableContainer>
-          <Table>
+          <Table stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell></TableCell> {/* Column for the icon */}
-                <TableCell>ID</TableCell>
-                <TableCell>Provider ID</TableCell>
-                <TableCell>Title</TableCell>
-                <TableCell>Description</TableCell>
-                <TableCell>Price (€)</TableCell>
-                <TableCell>Repost</TableCell>
-                <TableCell>URL</TableCell>
+                <TableCell width={40}></TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>ID</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Title</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Price (€)</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Repost</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>URL</TableCell>
               </TableRow>
             </TableHead>
+
             <TableBody>
               {products.map((p) => (
                 <TableRow
                   key={p.id}
+                  hover
                   sx={{
-                    backgroundColor: p.seen ? "inherit" : "#f9f9f9", // Subtle highlight
+                    transition: "0.2s",
+                    backgroundColor: !p.seen ? "#f0f9ff" : "inherit",
                   }}
                 >
-                  <TableCell width={40} align="center">
+                  {/* New icon */}
+                  <TableCell align="center">
                     {!p.seen && (
-                      <NewReleases
-                        fontSize="small"
-                        sx={{ color: "#00bcd4" }} // bright green, fresh "new" feel
-                      />
+                      <NewReleases fontSize="small" sx={{ color: "#0288d1" }} />
                     )}
                   </TableCell>
+
+                  {/* ID normal text */}
                   <TableCell>{p.id}</TableCell>
+
+                  {/* Title */}
+                  <TableCell sx={{ maxWidth: 200 }}>
+                    <Tooltip title={p.title} placement="top" arrow>
+                      <Typography noWrap sx={{ cursor: "default" }}>
+                        {p.title}
+                      </Typography>
+                    </Tooltip>
+                  </TableCell>
+
+                  {/* Description */}
+                  <TableCell sx={{ maxWidth: 250 }}>
+                    <Tooltip title={p.description} placement="top" arrow>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        noWrap
+                        sx={{ cursor: "default" }}
+                      >
+                        {p.description}
+                      </Typography>
+                    </Tooltip>
+                  </TableCell>
+
+                  {/* Price */}
+                  <TableCell sx={{ fontWeight: 600 }}>{p.price}</TableCell>
+
+                  {/* Repost → clickable (provider page) */}
                   <TableCell>
                     <Link
                       href={`/providers/${p.providerId}`}
                       style={{
-                        color: "#1976d2",
                         textDecoration: "none",
-                        fontWeight: 500,
                       }}
                     >
-                      {p.providerId}
+                      <Chip
+                        label={p.providerPropertyCount}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                        sx={{ cursor: "pointer" }}
+                      />
                     </Link>
                   </TableCell>
-                  <TableCell>{p.title}</TableCell>
-                  <TableCell>{p.description}</TableCell>
-                  <TableCell>{p.price}</TableCell>
-                  <TableCell>{p.providerPropertyCount}</TableCell>
+
+                  {/* URL */}
                   <TableCell>
                     <Button
                       href={p.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      variant="outlined"
+                      variant="contained"
                       size="small"
+                      sx={{
+                        textTransform: "none",
+                        borderRadius: 2,
+                      }}
                     >
                       Open
                     </Button>
