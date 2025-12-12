@@ -44,7 +44,13 @@ export default function ProductsPage() {
   const [error, setError] = React.useState<string | null>(null);
 
   const [page, setPage] = React.useState(initialPage);
-  const [rowsPerPage, setRowsPerPage] = React.useState(10);
+  const [rowsPerPage, setRowsPerPage] = React.useState(() => {
+    if (typeof window !== "undefined") {
+      return parseInt(localStorage.getItem("rowsPerPage") || "10", 10);
+    }
+
+    return 10;
+  });
 
   // Update URL when page changes
   const updateUrl = React.useCallback(
@@ -75,6 +81,10 @@ export default function ProductsPage() {
 
     fetchProducts();
   }, [page, rowsPerPage]);
+
+  React.useEffect(() => {
+    localStorage.setItem("rowsPerPage", String(rowsPerPage));
+  }, [rowsPerPage]);
 
   const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
