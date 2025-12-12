@@ -122,7 +122,7 @@ export default function ProductsPage() {
   return (
     <Box p={3}>
       <Typography variant="h5" fontWeight={600} mb={2}>
-        Products
+        Properties
       </Typography>
 
       <Paper elevation={1} sx={{ borderRadius: 2, overflow: "hidden" }}>
