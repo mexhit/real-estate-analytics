@@ -31,6 +31,8 @@ interface Product {
   providerPropertyCount: string;
   url: string;
   seen: boolean;
+  hasPriceChanged: boolean;
+  createdAt: number;
 }
 
 export default function ProductsPage() {
@@ -102,6 +104,13 @@ export default function ProductsPage() {
     updateUrl(0);
   };
 
+  const formatDate = (date: number) =>
+    new Intl.DateTimeFormat("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }).format(new Date(date));
+
   if (loading) {
     return (
       <Box p={3} textAlign="center">
@@ -134,7 +143,15 @@ export default function ProductsPage() {
                 <TableCell sx={{ fontWeight: 600 }}>ID</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Title</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Price (€)</TableCell>
+                <TableCell sx={{ fontWeight: 600, width: 140 }}>
+                  Price (€)
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600, width: 140 }}>
+                  Price Changed
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600, width: 140 }}>
+                  Posted
+                </TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Repost</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>URL</TableCell>
               </TableRow>
@@ -185,6 +202,20 @@ export default function ProductsPage() {
 
                   {/* Price */}
                   <TableCell sx={{ fontWeight: 600 }}>{p.price}</TableCell>
+
+                  <TableCell>
+                    <Chip
+                      label={p.hasPriceChanged ? "Yes" : "No"}
+                      size="small"
+                      color={p.hasPriceChanged ? "warning" : "default"}
+                      variant={p.hasPriceChanged ? "filled" : "outlined"}
+                    />
+                  </TableCell>
+
+                  {/* Posted date */}
+                  <TableCell sx={{ width: 140, color: "text.secondary" }}>
+                    {formatDate(p.createdAt)}
+                  </TableCell>
 
                   {/* Repost → clickable (provider page) */}
                   <TableCell>
