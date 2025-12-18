@@ -22,7 +22,7 @@ import { NewReleases } from "@mui/icons-material";
 import { useSearchParams, useRouter } from "next/navigation";
 import { propertiesApi } from "@/api/properties";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { Dayjs } from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 
 interface Product {
   id: number;
@@ -48,8 +48,24 @@ export default function ProductsPage() {
   const [totalProducts, setTotalProducts] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [fromDate, setFromDate] = React.useState<Dayjs | null>(null);
-  const [toDate, setToDate] = React.useState<Dayjs | null>(null);
+  const [fromDate, setFromDate] = React.useState<Dayjs | null>(() => {
+    if (typeof window !== "undefined") {
+      const storeFromDate = localStorage.getItem("fromDate");
+
+      return storeFromDate ? dayjs(storeFromDate) : null;
+    }
+
+    return null;
+  });
+  const [toDate, setToDate] = React.useState<Dayjs | null>(() => {
+    if (typeof window !== "undefined") {
+      const storeToDate = localStorage.getItem("toDate");
+
+      return storeToDate ? dayjs(storeToDate) : null;
+    }
+
+    return null;
+  });
 
   const [page, setPage] = React.useState(initialPage);
   const [rowsPerPage, setRowsPerPage] = React.useState(() => {
@@ -72,11 +88,14 @@ export default function ProductsPage() {
 
   React.useEffect(() => {
     const fetchProducts = async () => {
+      console.log(fromDate, "0-0-0-0-0------");
       try {
         setLoading(true);
         const res = await propertiesApi.getPaginatedProperties({
           limit: rowsPerPage,
           page: page + 1, // API is 1-based
+          fromDate: fromDate ? fromDate.startOf("day").valueOf() : undefined,
+          toDate: toDate ? toDate.endOf("day").valueOf() : undefined,
         });
         setProducts(res.data);
         setTotalProducts(res.total);
@@ -88,11 +107,23 @@ export default function ProductsPage() {
     };
 
     fetchProducts();
-  }, [page, rowsPerPage]);
+  }, [page, rowsPerPage, fromDate, toDate]);
 
   React.useEffect(() => {
     localStorage.setItem("rowsPerPage", String(rowsPerPage));
   }, [rowsPerPage]);
+
+  React.useEffect(() => {
+    const fromDateStr = fromDate ? fromDate.toISOString() : "";
+
+    localStorage.setItem("fromDate", fromDateStr);
+  }, [fromDate]);
+
+  React.useEffect(() => {
+    const toDateStr = toDate ? toDate.toISOString() : "";
+
+    localStorage.setItem("toDate", String(toDateStr));
+  }, [toDate]);
 
   const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
