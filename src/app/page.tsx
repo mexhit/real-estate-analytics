@@ -21,6 +21,8 @@ import {
 import { NewReleases } from "@mui/icons-material";
 import { useSearchParams, useRouter } from "next/navigation";
 import { propertiesApi } from "@/api/properties";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { Dayjs } from "dayjs";
 
 interface Product {
   id: number;
@@ -46,6 +48,8 @@ export default function ProductsPage() {
   const [totalProducts, setTotalProducts] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [fromDate, setFromDate] = React.useState<Dayjs | null>(null);
+  const [toDate, setToDate] = React.useState<Dayjs | null>(null);
 
   const [page, setPage] = React.useState(initialPage);
   const [rowsPerPage, setRowsPerPage] = React.useState(() => {
@@ -133,14 +137,59 @@ export default function ProductsPage() {
       <Typography variant="h5" fontWeight={600} mb={2}>
         Properties
       </Typography>
+      <Box mb={2} display="flex" gap={2} alignItems="center" flexWrap="wrap">
+        <DatePicker
+          label="From date"
+          value={fromDate}
+          onChange={(newValue) => {
+            setFromDate(newValue);
+            setPage(0);
+            updateUrl(0);
+          }}
+          slotProps={{ textField: { size: "small" } }}
+        />
 
-      <Paper elevation={1} sx={{ borderRadius: 2, overflow: "hidden" }}>
+        <DatePicker
+          label="To date"
+          value={toDate}
+          onChange={(newValue) => {
+            setToDate(newValue);
+            setPage(0);
+            updateUrl(0);
+          }}
+          slotProps={{ textField: { size: "small" } }}
+        />
+
+        {(fromDate || toDate) && (
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => {
+              setFromDate(null);
+              setToDate(null);
+              setPage(0);
+              updateUrl(0);
+            }}
+          >
+            Clear
+          </Button>
+        )}
+      </Box>
+      <Paper
+        elevation={1}
+        sx={{
+          borderRadius: 2,
+          border: "1px solid",
+          borderColor: "divider",
+          backgroundColor: "#fff",
+        }}
+      >
         <TableContainer>
           <Table stickyHeader>
             <TableHead>
               <TableRow>
                 <TableCell width={40}></TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>ID</TableCell>
+                <TableCell sx={{ fontWeight: 600, width: 50 }}>ID</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Title</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
                 <TableCell sx={{ fontWeight: 600, width: 140 }}>
@@ -152,8 +201,10 @@ export default function ProductsPage() {
                 <TableCell sx={{ fontWeight: 600, width: 140 }}>
                   Posted
                 </TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Repost</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>URL</TableCell>
+                <TableCell sx={{ fontWeight: 600, width: 50 }}>
+                  Repost
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600, width: 130 }}>URL</TableCell>
               </TableRow>
             </TableHead>
 
