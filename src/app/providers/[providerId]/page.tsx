@@ -26,6 +26,7 @@ interface Property {
   description: string;
   price: number;
   url: string;
+  createdAt: number;
 }
 
 export default function ProviderPropertiesPage() {
@@ -67,6 +68,13 @@ export default function ProviderPropertiesPage() {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
+
+  const formatDate = (date: number) =>
+    new Intl.DateTimeFormat("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }).format(new Date(date));
 
   if (loading) {
     return (
@@ -112,6 +120,7 @@ export default function ProviderPropertiesPage() {
                 <TableCell>Title</TableCell>
                 <TableCell>Description</TableCell>
                 <TableCell>Price (€)</TableCell>
+                <TableCell>Posted</TableCell>
                 <TableCell>URL</TableCell>
               </TableRow>
             </TableHead>
@@ -134,6 +143,10 @@ export default function ProviderPropertiesPage() {
                   <TableCell>{p.title}</TableCell>
                   <TableCell>{p.description}</TableCell>
                   <TableCell>{p.price}</TableCell>
+                  {/* Posted date */}
+                  <TableCell sx={{ width: 140, color: "text.secondary" }}>
+                    {formatDate(p.createdAt)}
+                  </TableCell>
                   <TableCell>
                     <a
                       href={p.url}
