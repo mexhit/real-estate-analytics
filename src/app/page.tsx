@@ -17,8 +17,9 @@ import {
   Button,
   Chip,
   Tooltip,
+  IconButton,
 } from "@mui/material";
-import { NewReleases } from "@mui/icons-material";
+import { NewReleases, StarBorderOutlined, Star } from "@mui/icons-material";
 import { useSearchParams, useRouter } from "next/navigation";
 import { propertiesApi } from "@/api/properties";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -35,6 +36,7 @@ interface Product {
   seen: boolean;
   hasPriceChanged: boolean;
   createdAt: number;
+  bookmarked: boolean;
 }
 
 export default function ProductsPage() {
@@ -86,9 +88,21 @@ export default function ProductsPage() {
     [router],
   );
 
+  const handleBookmark = async (propertyId: number) => {
+    setProducts((prev) =>
+      prev.map((p) =>
+        p.id === propertyId ? { ...p, bookmarked: !p.bookmarked } : p,
+      ),
+    );
+
+    await propertiesApi.bookmarkProperty({
+      propertyId: propertyId,
+      bookmarked: !products.find((p) => p.id === propertyId)?.bookmarked,
+    });
+  };
+
   React.useEffect(() => {
     const fetchProducts = async () => {
-      console.log(fromDate, "0-0-0-0-0------");
       try {
         setLoading(true);
         const res = await propertiesApi.getPaginatedProperties({
@@ -220,6 +234,9 @@ export default function ProductsPage() {
             <TableHead>
               <TableRow>
                 <TableCell width={40}></TableCell>
+                <TableCell sx={{ fontWeight: 600, width: 50 }} align="center">
+                  Save
+                </TableCell>
                 <TableCell sx={{ fontWeight: 600, width: 50 }}>ID</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Title</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
@@ -254,6 +271,19 @@ export default function ProductsPage() {
                     {!p.seen && (
                       <NewReleases fontSize="small" sx={{ color: "#0288d1" }} />
                     )}
+                  </TableCell>
+
+                  <TableCell align="center">
+                    <IconButton
+                      size="small"
+                      onClick={() => handleBookmark(p.id)}
+                    >
+                      {p.bookmarked ? (
+                        <Star sx={{ color: "#fbc02d" }} />
+                      ) : (
+                        <StarBorderOutlined />
+                      )}
+                    </IconButton>
                   </TableCell>
 
                   {/* ID normal text */}

@@ -16,6 +16,12 @@ class PropertiesApi {
       })
       .then((data) => data.data);
   }
+
+  bookmarkProperty({ propertyId, bookmarked }) {
+    return axios.put(
+      `http://localhost:3009/properties/${propertyId}/bookmark/${bookmarked}`,
+    );
+  }
 }
 
 export const propertiesApi = new PropertiesApi();
