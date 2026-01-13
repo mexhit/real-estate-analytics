@@ -37,6 +37,8 @@ interface Product {
   hasPriceChanged: boolean;
   createdAt: number;
   bookmarked: boolean;
+  firstPostedAt: string;
+  lastPostedAt: string;
 }
 
 export default function ProductsPage() {
@@ -101,6 +103,25 @@ export default function ProductsPage() {
     });
   };
 
+  function formatPeriod(from: string | Date, to: string | Date) {
+    const start = dayjs(from);
+    const end = dayjs(to);
+
+    const days = end.diff(start, "day");
+
+    if (days < 7) {
+      return `${days} day${days !== 1 ? "s" : ""}`;
+    }
+
+    if (days < 30) {
+      const weeks = Math.floor(days / 7);
+      return `${weeks} week${weeks !== 1 ? "s" : ""}`;
+    }
+
+    const months = Math.floor(days / 30);
+    return `${months} month${months !== 1 ? "s" : ""}`;
+  }
+
   React.useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -153,7 +174,7 @@ export default function ProductsPage() {
     updateUrl(0);
   };
 
-  const formatDate = (date: number) =>
+  const formatDate = (date: number | string) =>
     new Intl.DateTimeFormat("en-GB", {
       day: "2-digit",
       month: "short",
@@ -249,6 +270,9 @@ export default function ProductsPage() {
                 <TableCell sx={{ fontWeight: 600, width: 140 }}>
                   Posted
                 </TableCell>
+                <TableCell sx={{ fontWeight: 600, width: 140 }}>
+                  Active For
+                </TableCell>
                 <TableCell sx={{ fontWeight: 600, width: 50 }}>
                   Repost
                 </TableCell>
@@ -328,7 +352,19 @@ export default function ProductsPage() {
                   <TableCell sx={{ width: 140, color: "text.secondary" }}>
                     {formatDate(p.createdAt)}
                   </TableCell>
-
+                  {/* Active for */}
+                  <TableCell sx={{ color: "text.secondary" }}>
+                    <Tooltip
+                      title={`From ${formatDate(p.firstPostedAt)} to ${formatDate(
+                        p.lastPostedAt,
+                      )}`}
+                      arrow
+                    >
+                      <Typography variant="body2" color="text.secondary">
+                        {formatPeriod(p.firstPostedAt, p.lastPostedAt)}
+                      </Typography>
+                    </Tooltip>
+                  </TableCell>
                   {/* Repost → clickable (provider page) */}
                   <TableCell>
                     <Link
