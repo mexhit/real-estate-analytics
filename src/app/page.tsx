@@ -18,6 +18,9 @@ import {
   Chip,
   Tooltip,
   IconButton,
+  Divider,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import { NewReleases, StarBorderOutlined, Star } from "@mui/icons-material";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -79,6 +82,7 @@ export default function ProductsPage() {
 
     return 10;
   });
+  const [onlyUnseen, setOnlyUnseen] = React.useState(false);
 
   // Update URL when page changes
   const updateUrl = React.useCallback(
@@ -131,6 +135,7 @@ export default function ProductsPage() {
           page: page + 1, // API is 1-based
           fromDate: fromDate ? fromDate.startOf("day").valueOf() : undefined,
           toDate: toDate ? toDate.endOf("day").valueOf() : undefined,
+          onlyUnseen: onlyUnseen,
         });
         setProducts(res.data);
         setTotalProducts(res.total);
@@ -142,7 +147,7 @@ export default function ProductsPage() {
     };
 
     fetchProducts();
-  }, [page, rowsPerPage, fromDate, toDate]);
+  }, [page, rowsPerPage, fromDate, toDate, onlyUnseen]);
 
   React.useEffect(() => {
     localStorage.setItem("rowsPerPage", String(rowsPerPage));
@@ -180,15 +185,6 @@ export default function ProductsPage() {
       month: "short",
       year: "numeric",
     }).format(new Date(date));
-
-  if (loading) {
-    return (
-      <Box p={3} textAlign="center">
-        <CircularProgress />
-        <Typography mt={2}>Loading products...</Typography>
-      </Box>
-    );
-  }
 
   if (error) {
     return (
@@ -240,6 +236,20 @@ export default function ProductsPage() {
             Clear
           </Button>
         )}
+        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+        <FormControlLabel
+          control={
+            <Switch
+              checked={onlyUnseen}
+              onChange={(e) => {
+                setOnlyUnseen(e.target.checked);
+                setPage(0);
+                updateUrl(0);
+              }}
+            />
+          }
+          label="Only unseen"
+        />
       </Box>
       <Paper
         elevation={1}
@@ -250,160 +260,172 @@ export default function ProductsPage() {
           backgroundColor: "#fff",
         }}
       >
-        <TableContainer>
-          <Table stickyHeader>
-            <TableHead>
-              <TableRow>
-                <TableCell width={40}></TableCell>
-                <TableCell sx={{ fontWeight: 600, width: 50 }} align="center">
-                  Save
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600, width: 50 }}>ID</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Title</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
-                <TableCell sx={{ fontWeight: 600, width: 140 }}>
-                  Price (€)
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600, width: 140 }}>
-                  Price Changed
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600, width: 140 }}>
-                  Posted
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600, width: 140 }}>
-                  Active For
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600, width: 50 }}>
-                  Repost
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600, width: 130 }}>URL</TableCell>
-              </TableRow>
-            </TableHead>
-
-            <TableBody>
-              {products.map((p) => (
-                <TableRow
-                  key={p.id}
-                  hover
-                  sx={{
-                    transition: "0.2s",
-                    backgroundColor: !p.seen ? "#f0f9ff" : "inherit",
-                  }}
-                >
-                  {/* New icon */}
-                  <TableCell align="center">
-                    {!p.seen && (
-                      <NewReleases fontSize="small" sx={{ color: "#0288d1" }} />
-                    )}
+        {loading ? (
+          <Box p={3} textAlign="center">
+            <CircularProgress />
+            <Typography mt={2}>Loading products...</Typography>
+          </Box>
+        ) : (
+          <TableContainer>
+            <Table stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell width={40}></TableCell>
+                  <TableCell sx={{ fontWeight: 600, width: 50 }} align="center">
+                    Save
                   </TableCell>
-
-                  <TableCell align="center">
-                    <IconButton
-                      size="small"
-                      onClick={() => handleBookmark(p.id)}
-                    >
-                      {p.bookmarked ? (
-                        <Star sx={{ color: "#fbc02d" }} />
-                      ) : (
-                        <StarBorderOutlined />
-                      )}
-                    </IconButton>
+                  <TableCell sx={{ fontWeight: 600, width: 50 }}>ID</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Title</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
+                  <TableCell sx={{ fontWeight: 600, width: 140 }}>
+                    Price (€)
                   </TableCell>
-
-                  {/* ID normal text */}
-                  <TableCell>{p.id}</TableCell>
-
-                  {/* Title */}
-                  <TableCell sx={{ maxWidth: 200 }}>
-                    <Tooltip title={p.title} placement="top" arrow>
-                      <Typography noWrap sx={{ cursor: "default" }}>
-                        {p.title}
-                      </Typography>
-                    </Tooltip>
+                  <TableCell sx={{ fontWeight: 600, width: 140 }}>
+                    Price Changed
                   </TableCell>
-
-                  {/* Description */}
-                  <TableCell sx={{ maxWidth: 250 }}>
-                    <Tooltip title={p.description} placement="top" arrow>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        noWrap
-                        sx={{ cursor: "default" }}
-                      >
-                        {p.description}
-                      </Typography>
-                    </Tooltip>
+                  <TableCell sx={{ fontWeight: 600, width: 140 }}>
+                    Posted
                   </TableCell>
-
-                  {/* Price */}
-                  <TableCell sx={{ fontWeight: 600 }}>{p.price}</TableCell>
-
-                  <TableCell>
-                    <Chip
-                      label={p.hasPriceChanged ? "Yes" : "No"}
-                      size="small"
-                      color={p.hasPriceChanged ? "warning" : "default"}
-                      variant={p.hasPriceChanged ? "filled" : "outlined"}
-                    />
+                  <TableCell sx={{ fontWeight: 600, width: 140 }}>
+                    Active For
                   </TableCell>
-
-                  {/* Posted date */}
-                  <TableCell sx={{ width: 140, color: "text.secondary" }}>
-                    {formatDate(p.createdAt)}
+                  <TableCell sx={{ fontWeight: 600, width: 50 }}>
+                    Repost
                   </TableCell>
-                  {/* Active for */}
-                  <TableCell sx={{ color: "text.secondary" }}>
-                    <Tooltip
-                      title={`From ${formatDate(p.firstPostedAt)} to ${formatDate(
-                        p.lastPostedAt,
-                      )}`}
-                      arrow
-                    >
-                      <Typography variant="body2" color="text.secondary">
-                        {formatPeriod(p.firstPostedAt, p.lastPostedAt)}
-                      </Typography>
-                    </Tooltip>
-                  </TableCell>
-                  {/* Repost → clickable (provider page) */}
-                  <TableCell>
-                    <Link
-                      href={`/providers/${p.providerId}`}
-                      style={{
-                        textDecoration: "none",
-                      }}
-                    >
-                      <Chip
-                        label={p.providerPropertyCount}
-                        size="small"
-                        color="primary"
-                        variant="outlined"
-                        sx={{ cursor: "pointer" }}
-                      />
-                    </Link>
-                  </TableCell>
-
-                  {/* URL */}
-                  <TableCell>
-                    <Button
-                      href={p.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      variant="contained"
-                      size="small"
-                      sx={{
-                        textTransform: "none",
-                        borderRadius: 2,
-                      }}
-                    >
-                      Open
-                    </Button>
+                  <TableCell sx={{ fontWeight: 600, width: 130 }}>
+                    URL
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+
+              <TableBody>
+                {products.map((p) => (
+                  <TableRow
+                    key={p.id}
+                    hover
+                    sx={{
+                      transition: "0.2s",
+                      backgroundColor: !p.seen ? "#f0f9ff" : "inherit",
+                    }}
+                  >
+                    {/* New icon */}
+                    <TableCell align="center">
+                      {!p.seen && (
+                        <NewReleases
+                          fontSize="small"
+                          sx={{ color: "#0288d1" }}
+                        />
+                      )}
+                    </TableCell>
+
+                    <TableCell align="center">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleBookmark(p.id)}
+                      >
+                        {p.bookmarked ? (
+                          <Star sx={{ color: "#fbc02d" }} />
+                        ) : (
+                          <StarBorderOutlined />
+                        )}
+                      </IconButton>
+                    </TableCell>
+
+                    {/* ID normal text */}
+                    <TableCell>{p.id}</TableCell>
+
+                    {/* Title */}
+                    <TableCell sx={{ maxWidth: 200 }}>
+                      <Tooltip title={p.title} placement="top" arrow>
+                        <Typography noWrap sx={{ cursor: "default" }}>
+                          {p.title}
+                        </Typography>
+                      </Tooltip>
+                    </TableCell>
+
+                    {/* Description */}
+                    <TableCell sx={{ maxWidth: 250 }}>
+                      <Tooltip title={p.description} placement="top" arrow>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          noWrap
+                          sx={{ cursor: "default" }}
+                        >
+                          {p.description}
+                        </Typography>
+                      </Tooltip>
+                    </TableCell>
+
+                    {/* Price */}
+                    <TableCell sx={{ fontWeight: 600 }}>{p.price}</TableCell>
+
+                    <TableCell>
+                      <Chip
+                        label={p.hasPriceChanged ? "Yes" : "No"}
+                        size="small"
+                        color={p.hasPriceChanged ? "warning" : "default"}
+                        variant={p.hasPriceChanged ? "filled" : "outlined"}
+                      />
+                    </TableCell>
+
+                    {/* Posted date */}
+                    <TableCell sx={{ width: 140, color: "text.secondary" }}>
+                      {formatDate(p.createdAt)}
+                    </TableCell>
+                    {/* Active for */}
+                    <TableCell sx={{ color: "text.secondary" }}>
+                      <Tooltip
+                        title={`From ${formatDate(p.firstPostedAt)} to ${formatDate(
+                          p.lastPostedAt,
+                        )}`}
+                        arrow
+                      >
+                        <Typography variant="body2" color="text.secondary">
+                          {formatPeriod(p.firstPostedAt, p.lastPostedAt)}
+                        </Typography>
+                      </Tooltip>
+                    </TableCell>
+                    {/* Repost → clickable (provider page) */}
+                    <TableCell>
+                      <Link
+                        href={`/providers/${p.providerId}`}
+                        style={{
+                          textDecoration: "none",
+                        }}
+                      >
+                        <Chip
+                          label={p.providerPropertyCount}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                          sx={{ cursor: "pointer" }}
+                        />
+                      </Link>
+                    </TableCell>
+
+                    {/* URL */}
+                    <TableCell>
+                      <Button
+                        href={p.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="contained"
+                        size="small"
+                        sx={{
+                          textTransform: "none",
+                          borderRadius: 2,
+                        }}
+                      >
+                        Open
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
 
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
