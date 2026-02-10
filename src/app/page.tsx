@@ -83,6 +83,7 @@ export default function ProductsPage() {
     return 10;
   });
   const [onlyUnseen, setOnlyUnseen] = React.useState(false);
+  const [onlyBookmarked, setOnlyBookmarked] = React.useState(false);
 
   // Update URL when page changes
   const updateUrl = React.useCallback(
@@ -132,11 +133,13 @@ export default function ProductsPage() {
         setLoading(true);
         const res = await propertiesApi.getPaginatedProperties({
           limit: rowsPerPage,
-          page: page + 1, // API is 1-based
+          page: page + 1,
           fromDate: fromDate ? fromDate.startOf("day").valueOf() : undefined,
           toDate: toDate ? toDate.endOf("day").valueOf() : undefined,
-          onlyUnseen: onlyUnseen,
+          onlyUnseen,
+          onlyBookmarked,
         });
+
         setProducts(res.data);
         setTotalProducts(res.total);
       } catch (err) {
@@ -147,7 +150,7 @@ export default function ProductsPage() {
     };
 
     fetchProducts();
-  }, [page, rowsPerPage, fromDate, toDate, onlyUnseen]);
+  }, [page, rowsPerPage, fromDate, toDate, onlyUnseen, onlyBookmarked]);
 
   React.useEffect(() => {
     localStorage.setItem("rowsPerPage", String(rowsPerPage));
@@ -249,6 +252,20 @@ export default function ProductsPage() {
             />
           }
           label="Only unseen"
+        />
+        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+        <FormControlLabel
+          control={
+            <Switch
+              checked={onlyBookmarked}
+              onChange={(e) => {
+                setOnlyBookmarked(e.target.checked);
+                setPage(0);
+                updateUrl(0);
+              }}
+            />
+          }
+          label="Only bookmarked"
         />
       </Box>
       <Paper
