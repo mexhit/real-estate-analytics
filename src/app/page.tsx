@@ -84,6 +84,7 @@ export default function ProductsPage() {
   });
   const [onlyUnseen, setOnlyUnseen] = React.useState(false);
   const [onlyBookmarked, setOnlyBookmarked] = React.useState(false);
+  const [onlyPriceChanged, setOnlyPriceChanged] = React.useState(false);
 
   // Update URL when page changes
   const updateUrl = React.useCallback(
@@ -138,6 +139,7 @@ export default function ProductsPage() {
           toDate: toDate ? toDate.endOf("day").valueOf() : undefined,
           onlyUnseen,
           onlyBookmarked,
+          onlyPriceChanged,
         });
 
         setProducts(res.data);
@@ -150,7 +152,15 @@ export default function ProductsPage() {
     };
 
     fetchProducts();
-  }, [page, rowsPerPage, fromDate, toDate, onlyUnseen, onlyBookmarked]);
+  }, [
+    page,
+    rowsPerPage,
+    fromDate,
+    toDate,
+    onlyUnseen,
+    onlyBookmarked,
+    onlyPriceChanged,
+  ]);
 
   React.useEffect(() => {
     localStorage.setItem("rowsPerPage", String(rowsPerPage));
@@ -266,6 +276,20 @@ export default function ProductsPage() {
             />
           }
           label="Only bookmarked"
+        />
+        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+        <FormControlLabel
+          control={
+            <Switch
+              checked={onlyPriceChanged}
+              onChange={(e) => {
+                setOnlyPriceChanged(e.target.checked);
+                setPage(0);
+                updateUrl(0);
+              }}
+            />
+          }
+          label="Only price changed"
         />
       </Box>
       <Paper
