@@ -434,6 +434,7 @@ export default function ProductsPage() {
                         style={{
                           textDecoration: "none",
                         }}
+                        target="_blank"
                       >
                         <Chip
                           label={p.providerPropertyCount}
