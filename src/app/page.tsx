@@ -42,6 +42,8 @@ interface Product {
   bookmarked: boolean;
   firstPostedAt: string;
   lastPostedAt: string;
+  firstPrice: string;
+  lastPrice: string;
 }
 
 export default function ProductsPage() {
@@ -199,6 +201,63 @@ export default function ProductsPage() {
       year: "numeric",
     }).format(new Date(date));
 
+  function formatPrice(value: number | null | undefined): string {
+    if (value == null || isNaN(value)) return "-";
+
+    const formatted = new Intl.NumberFormat("en-US", {
+      maximumFractionDigits: 0,
+    }).format(value);
+
+    return `${formatted} €`;
+  }
+
+  function parsePriceToNumber(price: string | null | undefined): number | null {
+    if (!price) return null;
+
+    // Keep digits only
+    const numeric = price.replace(/[^\d]/g, "");
+
+    if (!numeric) return null;
+
+    return Number(numeric);
+  }
+
+  const getPriceChangeInfo = (firstPrice: string, lastPrice: string) => {
+    const firstPriceNum = parsePriceToNumber(firstPrice);
+    const lastPriceNum = parsePriceToNumber(lastPrice);
+
+    if (firstPriceNum != null && lastPriceNum != null) {
+      if (lastPriceNum > firstPriceNum) {
+        return {
+          type: "increased",
+          diff: lastPriceNum - firstPriceNum,
+        };
+      }
+
+      if (lastPriceNum < firstPriceNum) {
+        return {
+          type: "decreased",
+          diff: firstPriceNum - lastPriceNum,
+        };
+      }
+    }
+
+    return {
+      type: "unchanged",
+      diff: 0,
+    };
+  };
+
+  const productsWithPriceChange = products.map((p) => {
+    const change = getPriceChangeInfo(p.firstPrice, p.lastPrice);
+
+    return {
+      ...p,
+      priceChangeType: change.type,
+      priceDiff: formatPrice(change.diff),
+    };
+  });
+
   if (error) {
     return (
       <Box p={3} textAlign="center">
@@ -340,7 +399,7 @@ export default function ProductsPage() {
               </TableHead>
 
               <TableBody>
-                {products.map((p) => (
+                {productsWithPriceChange.map((p) => (
                   <TableRow
                     key={p.id}
                     hover
@@ -402,12 +461,27 @@ export default function ProductsPage() {
                     <TableCell sx={{ fontWeight: 600 }}>{p.price}</TableCell>
 
                     <TableCell>
-                      <Chip
-                        label={p.hasPriceChanged ? "Yes" : "No"}
-                        size="small"
-                        color={p.hasPriceChanged ? "warning" : "default"}
-                        variant={p.hasPriceChanged ? "filled" : "outlined"}
-                      />
+                      {p.priceChangeType === "increased" && (
+                        <Chip
+                          label={`↑ +${p.priceDiff}`}
+                          size="small"
+                          color="error"
+                          variant="filled"
+                        />
+                      )}
+
+                      {p.priceChangeType === "decreased" && (
+                        <Chip
+                          label={`↓ -${p.priceDiff}`}
+                          size="small"
+                          color="success"
+                          variant="filled"
+                        />
+                      )}
+
+                      {p.priceChangeType === "unchanged" && (
+                        <Chip label="—" size="small" variant="outlined" />
+                      )}
                     </TableCell>
 
                     {/* Posted date */}
