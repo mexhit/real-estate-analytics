@@ -16,6 +16,10 @@ class AuthApi {
         return data;
       });
   }
+
+  logout() {
+    return apiClient.post("/auth/logout");
+  }
 }
 
 export const authApi = new AuthApi();

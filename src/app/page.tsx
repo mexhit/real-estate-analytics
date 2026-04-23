@@ -27,6 +27,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { propertiesApi } from "@/api/properties";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs, { Dayjs } from "dayjs";
+import { LogoutButton } from "@/app/LogoutButton";
 
 interface Product {
   id: number;
@@ -268,9 +269,18 @@ export default function ProductsPage() {
 
   return (
     <Box p={3}>
-      <Typography variant="h5" fontWeight={600} mb={2}>
-        Properties
-      </Typography>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        gap={2}
+        mb={2}
+      >
+        <Typography variant="h5" fontWeight={600}>
+          Properties
+        </Typography>
+        <LogoutButton />
+      </Box>
       <Box mb={2} display="flex" gap={2} alignItems="center" flexWrap="wrap">
         <DatePicker
           label="From date"

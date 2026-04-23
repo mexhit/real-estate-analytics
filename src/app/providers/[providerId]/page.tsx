@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import { propertiesApi } from "@/api/properties";
+import { LogoutButton } from "@/app/LogoutButton";
 
 interface Property {
   id: number;
@@ -59,7 +60,7 @@ export default function ProviderPropertiesPage() {
     };
 
     fetchProducts();
-  }, [page, rowsPerPage]);
+  }, [page, providerId, rowsPerPage]);
 
   const handleChangePage = (_: unknown, newPage: number) => setPage(newPage);
   const handleChangeRowsPerPage = (
@@ -105,9 +106,12 @@ export default function ProviderPropertiesPage() {
           Properties by Provider: <strong>{providerId}</strong>
         </Typography>
 
-        <Button component={Link} href="/products" variant="outlined">
-          Back to Products
-        </Button>
+        <Box display="flex" gap={1}>
+          <Button component={Link} href="/" variant="outlined">
+            Back to Products
+          </Button>
+          <LogoutButton />
+        </Box>
       </Box>
 
       <Paper>
