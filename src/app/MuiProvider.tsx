@@ -4,6 +4,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { AuthGate } from "@/app/AuthGate";
 
 import theme from "./theme";
 
@@ -12,7 +13,7 @@ export function MuiProvider({ children }: { children: React.ReactNode }) {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <LocalizationProvider dateAdapter={AdapterDayjs}>
-        {children}
+        <AuthGate>{children}</AuthGate>
       </LocalizationProvider>
     </ThemeProvider>
   );
