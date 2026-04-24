@@ -1,7 +1,7 @@
 import axios from "axios";
 
-//const url = "164.92.139.187";
-export const url = "localhost";
+const url = "164.92.139.187";
+//export const url = "localhost";
 export const tokenStorageKey = "authToken";
 
 export const apiClient = axios.create({
