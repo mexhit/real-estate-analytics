@@ -1,11 +1,10 @@
 import axios from "axios";
 
-const url = "164.92.139.187";
-//export const url = "localhost";
 export const tokenStorageKey = "authToken";
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export const apiClient = axios.create({
-  baseURL: `http://${url}:3009`,
+  baseURL: apiBaseUrl,
 });
 
 export function getAuthToken() {
