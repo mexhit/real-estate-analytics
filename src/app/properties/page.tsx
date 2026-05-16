@@ -3,49 +3,22 @@
 import * as React from "react";
 import Link from "next/link";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Paper,
   TablePagination,
   Typography,
   Box,
   CircularProgress,
   Button,
-  Chip,
-  Tooltip,
-  IconButton,
   Divider,
   FormControlLabel,
   Switch,
 } from "@mui/material";
-import { NewReleases, StarBorderOutlined, Star } from "@mui/icons-material";
 import { useSearchParams, useRouter } from "next/navigation";
 import { propertiesApi } from "@/api/properties";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs, { Dayjs } from "dayjs";
 import { LogoutButton } from "@/app/LogoutButton";
-
-interface Product {
-  id: number;
-  providerId: string;
-  title: string;
-  description: string;
-  price: number;
-  providerPropertyCount: string;
-  url: string;
-  seen: boolean;
-  hasPriceChanged: boolean;
-  createdAt: number;
-  bookmarked: boolean;
-  firstPostedAt: string;
-  lastPostedAt: string;
-  firstPrice: string;
-  lastPrice: string;
-}
+import { PropertyTable, type PropertyTableItem } from "@/components/PropertyTable";
 
 export default function PropertiesPage() {
   const router = useRouter();
@@ -53,40 +26,19 @@ export default function PropertiesPage() {
 
   const initialPage = parseInt(searchParams.get("page") || "0", 10);
 
-  const [products, setProducts] = React.useState<Product[]>([]);
+  const [products, setProducts] = React.useState<PropertyTableItem[]>([]);
   const [totalProducts, setTotalProducts] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [fromDate, setFromDate] = React.useState<Dayjs | null>(() => {
-    if (typeof window !== "undefined") {
-      const storeFromDate = localStorage.getItem("fromDate");
-
-      return storeFromDate ? dayjs(storeFromDate) : null;
-    }
-
-    return null;
-  });
-  const [toDate, setToDate] = React.useState<Dayjs | null>(() => {
-    if (typeof window !== "undefined") {
-      const storeToDate = localStorage.getItem("toDate");
-
-      return storeToDate ? dayjs(storeToDate) : null;
-    }
-
-    return null;
-  });
+  const [fromDate, setFromDate] = React.useState<Dayjs | null>(null);
+  const [toDate, setToDate] = React.useState<Dayjs | null>(null);
 
   const [page, setPage] = React.useState(initialPage);
-  const [rowsPerPage, setRowsPerPage] = React.useState(() => {
-    if (typeof window !== "undefined") {
-      return parseInt(localStorage.getItem("rowsPerPage") || "10", 10);
-    }
-
-    return 10;
-  });
+  const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [onlyUnseen, setOnlyUnseen] = React.useState(false);
   const [onlyBookmarked, setOnlyBookmarked] = React.useState(false);
   const [onlyPriceChanged, setOnlyPriceChanged] = React.useState(false);
+  const [preferencesLoaded, setPreferencesLoaded] = React.useState(false);
 
   const updateUrl = React.useCallback(
     (newPage: number) => {
@@ -110,26 +62,22 @@ export default function PropertiesPage() {
     });
   };
 
-  function formatPeriod(from: string | Date, to: string | Date) {
-    const start = dayjs(from);
-    const end = dayjs(to);
+  React.useEffect(() => {
+    const storedFromDate = localStorage.getItem("fromDate");
+    const storedToDate = localStorage.getItem("toDate");
+    const storedRowsPerPage = localStorage.getItem("rowsPerPage");
 
-    const days = end.diff(start, "day");
-
-    if (days < 7) {
-      return `${days} day${days !== 1 ? "s" : ""}`;
-    }
-
-    if (days < 30) {
-      const weeks = Math.floor(days / 7);
-      return `${weeks} week${weeks !== 1 ? "s" : ""}`;
-    }
-
-    const months = Math.floor(days / 30);
-    return `${months} month${months !== 1 ? "s" : ""}`;
-  }
+    setFromDate(storedFromDate ? dayjs(storedFromDate) : null);
+    setToDate(storedToDate ? dayjs(storedToDate) : null);
+    setRowsPerPage(storedRowsPerPage ? parseInt(storedRowsPerPage, 10) : 10);
+    setPreferencesLoaded(true);
+  }, []);
 
   React.useEffect(() => {
+    if (!preferencesLoaded) {
+      return;
+    }
+
     const fetchProducts = async () => {
       try {
         setLoading(true);
@@ -154,6 +102,7 @@ export default function PropertiesPage() {
 
     fetchProducts();
   }, [
+    preferencesLoaded,
     page,
     rowsPerPage,
     fromDate,
@@ -164,20 +113,32 @@ export default function PropertiesPage() {
   ]);
 
   React.useEffect(() => {
+    if (!preferencesLoaded) {
+      return;
+    }
+
     localStorage.setItem("rowsPerPage", String(rowsPerPage));
-  }, [rowsPerPage]);
+  }, [preferencesLoaded, rowsPerPage]);
 
   React.useEffect(() => {
+    if (!preferencesLoaded) {
+      return;
+    }
+
     const fromDateStr = fromDate ? fromDate.toISOString() : "";
 
     localStorage.setItem("fromDate", fromDateStr);
-  }, [fromDate]);
+  }, [preferencesLoaded, fromDate]);
 
   React.useEffect(() => {
+    if (!preferencesLoaded) {
+      return;
+    }
+
     const toDateStr = toDate ? toDate.toISOString() : "";
 
     localStorage.setItem("toDate", String(toDateStr));
-  }, [toDate]);
+  }, [preferencesLoaded, toDate]);
 
   const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
@@ -192,69 +153,6 @@ export default function PropertiesPage() {
     setPage(0);
     updateUrl(0);
   };
-
-  const formatDate = (date: number | string) =>
-    new Intl.DateTimeFormat("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }).format(new Date(date));
-
-  function formatPrice(value: number | null | undefined): string {
-    if (value == null || isNaN(value)) return "-";
-
-    const formatted = new Intl.NumberFormat("en-US", {
-      maximumFractionDigits: 0,
-    }).format(value);
-
-    return `${formatted} €`;
-  }
-
-  function parsePriceToNumber(price: string | null | undefined): number | null {
-    if (!price) return null;
-
-    const numeric = price.replace(/[^\d]/g, "");
-
-    if (!numeric) return null;
-
-    return Number(numeric);
-  }
-
-  const getPriceChangeInfo = (firstPrice: string, lastPrice: string) => {
-    const firstPriceNum = parsePriceToNumber(firstPrice);
-    const lastPriceNum = parsePriceToNumber(lastPrice);
-
-    if (firstPriceNum != null && lastPriceNum != null) {
-      if (lastPriceNum > firstPriceNum) {
-        return {
-          type: "increased",
-          diff: lastPriceNum - firstPriceNum,
-        };
-      }
-
-      if (lastPriceNum < firstPriceNum) {
-        return {
-          type: "decreased",
-          diff: firstPriceNum - lastPriceNum,
-        };
-      }
-    }
-
-    return {
-      type: "unchanged",
-      diff: 0,
-    };
-  };
-
-  const productsWithPriceChange = products.map((p) => {
-    const change = getPriceChangeInfo(p.firstPrice, p.lastPrice);
-
-    return {
-      ...p,
-      priceChangeType: change.type,
-      priceDiff: formatPrice(change.diff),
-    };
-  });
 
   if (error) {
     return (
@@ -378,172 +276,7 @@ export default function PropertiesPage() {
             <Typography mt={2}>Loading products...</Typography>
           </Box>
         ) : (
-          <TableContainer>
-            <Table stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <TableCell width={40}></TableCell>
-                  <TableCell sx={{ fontWeight: 600, width: 50 }} align="center">
-                    Save
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600, width: 50 }}>ID</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Title</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
-                  <TableCell sx={{ fontWeight: 600, width: 140 }}>
-                    Price (€)
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600, width: 140 }}>
-                    Price Changed
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600, width: 140 }}>
-                    Posted
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600, width: 140 }}>
-                    Active For
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600, width: 50 }}>
-                    Repost
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600, width: 130 }}>
-                    URL
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {productsWithPriceChange.map((p) => (
-                  <TableRow
-                    key={p.id}
-                    hover
-                    sx={{
-                      transition: "0.2s",
-                      backgroundColor: !p.seen ? "#f0f9ff" : "inherit",
-                    }}
-                  >
-                    <TableCell align="center">
-                      {!p.seen && (
-                        <NewReleases
-                          fontSize="small"
-                          sx={{ color: "#0288d1" }}
-                        />
-                      )}
-                    </TableCell>
-
-                    <TableCell align="center">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleBookmark(p.id)}
-                      >
-                        {p.bookmarked ? (
-                          <Star sx={{ color: "#fbc02d" }} />
-                        ) : (
-                          <StarBorderOutlined />
-                        )}
-                      </IconButton>
-                    </TableCell>
-
-                    <TableCell>{p.id}</TableCell>
-
-                    <TableCell sx={{ maxWidth: 200 }}>
-                      <Tooltip title={p.title} placement="top" arrow>
-                        <Typography noWrap sx={{ cursor: "default" }}>
-                          {p.title}
-                        </Typography>
-                      </Tooltip>
-                    </TableCell>
-
-                    <TableCell sx={{ maxWidth: 250 }}>
-                      <Tooltip title={p.description} placement="top" arrow>
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          noWrap
-                          sx={{ cursor: "default" }}
-                        >
-                          {p.description}
-                        </Typography>
-                      </Tooltip>
-                    </TableCell>
-
-                    <TableCell sx={{ fontWeight: 600 }}>{p.price}</TableCell>
-
-                    <TableCell>
-                      {p.priceChangeType === "increased" && (
-                        <Chip
-                          label={`↑ +${p.priceDiff}`}
-                          size="small"
-                          color="error"
-                          variant="filled"
-                        />
-                      )}
-
-                      {p.priceChangeType === "decreased" && (
-                        <Chip
-                          label={`↓ -${p.priceDiff}`}
-                          size="small"
-                          color="success"
-                          variant="filled"
-                        />
-                      )}
-
-                      {p.priceChangeType === "unchanged" && (
-                        <Chip label="—" size="small" variant="outlined" />
-                      )}
-                    </TableCell>
-
-                    <TableCell sx={{ width: 140, color: "text.secondary" }}>
-                      {formatDate(p.createdAt)}
-                    </TableCell>
-                    <TableCell sx={{ color: "text.secondary" }}>
-                      <Tooltip
-                        title={`From ${formatDate(p.firstPostedAt)} to ${formatDate(
-                          p.lastPostedAt,
-                        )}`}
-                        arrow
-                      >
-                        <Typography variant="body2" color="text.secondary">
-                          {formatPeriod(p.firstPostedAt, p.lastPostedAt)}
-                        </Typography>
-                      </Tooltip>
-                    </TableCell>
-                    <TableCell>
-                      <Link
-                        href={`/providers/${p.providerId}`}
-                        style={{
-                          textDecoration: "none",
-                        }}
-                        target="_blank"
-                      >
-                        <Chip
-                          label={p.providerPropertyCount}
-                          size="small"
-                          color="primary"
-                          variant="outlined"
-                          sx={{ cursor: "pointer" }}
-                        />
-                      </Link>
-                    </TableCell>
-
-                    <TableCell>
-                      <Button
-                        href={p.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        variant="contained"
-                        size="small"
-                        sx={{
-                          textTransform: "none",
-                          borderRadius: 2,
-                        }}
-                      >
-                        Open
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <PropertyTable properties={products} onBookmark={handleBookmark} />
         )}
 
         <TablePagination

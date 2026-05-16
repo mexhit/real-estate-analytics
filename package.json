@@ -13,10 +13,11 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.4",
     "@mui/material": "^7.3.4",
+    "@mui/material-nextjs": "^9.0.1",
     "@mui/x-date-pickers": "^8.22.0",
-    "axios": "^1.12.2",
+    "axios": "^1.15.0",
     "dayjs": "^1.11.19",
-    "next": "^15.5.9",
+    "next": "^15.5.16",
     "prettier": "^3.6.2",
     "react": "^19.1.5",
     "react-dom": "^19.1.5"
@@ -28,7 +29,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "^15.5.9",
+    "eslint-config-next": "^15.5.16",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

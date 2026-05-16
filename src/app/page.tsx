@@ -9,30 +9,13 @@ import {
   CircularProgress,
   Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   Typography,
 } from "@mui/material";
-import { Today, TrendingDown, TrendingUp } from "@mui/icons-material";
+import { Today } from "@mui/icons-material";
 import dayjs from "dayjs";
 import { propertiesApi } from "@/api/properties";
 import { LogoutButton } from "@/app/LogoutButton";
-
-interface Product {
-  id: number;
-  providerId: string;
-  title: string;
-  description: string;
-  price: number;
-  url: string;
-  createdAt: number;
-  firstPrice: string;
-  lastPrice: string;
-  bookmarked: boolean;
-}
+import { PropertyTable, type PropertyTableItem } from "@/components/PropertyTable";
 
 interface DashboardMetric {
   label: string;
@@ -46,10 +29,29 @@ export default function DashboardPage() {
   const [todayPostedTotal, setTodayPostedTotal] = React.useState(0);
   const [todayPriceChangedTotal, setTodayPriceChangedTotal] = React.useState(0);
   const [todayPriceChangedProperties, setTodayPriceChangedProperties] =
-    React.useState<Product[]>([]);
+    React.useState<PropertyTableItem[]>([]);
   const [todayBookmarkedTotal, setTodayBookmarkedTotal] = React.useState(0);
   const [todayBookmarkedProperties, setTodayBookmarkedProperties] =
-    React.useState<Product[]>([]);
+    React.useState<PropertyTableItem[]>([]);
+
+  const handleBookmark = async (propertyId: number) => {
+    const updateCollection = (items: PropertyTableItem[]) =>
+      items.map((item) =>
+        item.id === propertyId ? { ...item, bookmarked: !item.bookmarked } : item,
+      );
+
+    const currentProperty =
+      todayPriceChangedProperties.find((item) => item.id === propertyId) ||
+      todayBookmarkedProperties.find((item) => item.id === propertyId);
+
+    setTodayPriceChangedProperties((prev) => updateCollection(prev));
+    setTodayBookmarkedProperties((prev) => updateCollection(prev));
+
+    await propertiesApi.bookmarkProperty({
+      propertyId,
+      bookmarked: !currentProperty?.bookmarked,
+    });
+  };
 
   React.useEffect(() => {
     const fetchDashboard = async () => {
@@ -96,63 +98,6 @@ export default function DashboardPage() {
 
     fetchDashboard();
   }, []);
-
-  function formatDate(date: number | string) {
-    return new Intl.DateTimeFormat("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }).format(new Date(date));
-  }
-
-  function formatPrice(value: number | null | undefined): string {
-    if (value == null || isNaN(value)) return "-";
-
-    const formatted = new Intl.NumberFormat("en-US", {
-      maximumFractionDigits: 0,
-    }).format(value);
-
-    return `${formatted} €`;
-  }
-
-  function parsePriceToNumber(price: string | null | undefined): number | null {
-    if (!price) return null;
-
-    const numeric = price.replace(/[^\d]/g, "");
-
-    if (!numeric) return null;
-
-    return Number(numeric);
-  }
-
-  const todayPriceChangedWithDiff = todayPriceChangedProperties.map((p) => {
-    const firstPriceNum = parsePriceToNumber(p.firstPrice);
-    const lastPriceNum = parsePriceToNumber(p.lastPrice);
-
-    if (firstPriceNum != null && lastPriceNum != null) {
-      if (lastPriceNum > firstPriceNum) {
-        return {
-          ...p,
-          priceChangeType: "increased" as const,
-          priceDiff: lastPriceNum - firstPriceNum,
-        };
-      }
-
-      if (lastPriceNum < firstPriceNum) {
-        return {
-          ...p,
-          priceChangeType: "decreased" as const,
-          priceDiff: firstPriceNum - lastPriceNum,
-        };
-      }
-    }
-
-    return {
-      ...p,
-      priceChangeType: "unchanged" as const,
-      priceDiff: 0,
-    };
-  });
 
   const dashboardMetrics: DashboardMetric[] = [
     {
@@ -362,72 +307,17 @@ export default function DashboardPage() {
           <Box p={3} textAlign="center">
             <CircularProgress size={24} />
           </Box>
-        ) : todayPriceChangedWithDiff.length === 0 ? (
+        ) : todayPriceChangedProperties.length === 0 ? (
           <Box px={2.5} py={3}>
             <Typography color="text.secondary">
               No price changes detected on properties posted today.
             </Typography>
           </Box>
         ) : (
-          <Box sx={{ overflowX: "auto" }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 600 }}>Property</TableCell>
-                  <TableCell sx={{ fontWeight: 600, width: 140 }}>
-                    First price
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600, width: 140 }}>
-                    Latest price
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600, width: 140 }}>
-                    Change
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600, width: 120 }}>
-                    Posted
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {todayPriceChangedWithDiff.map((property) => (
-                  <TableRow key={`today-${property.id}`} hover>
-                    <TableCell sx={{ minWidth: 320 }}>
-                      <Typography fontWeight={600} noWrap>
-                        {property.title}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" noWrap>
-                        {property.description}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>{property.firstPrice || "-"}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>
-                      {property.lastPrice || property.price}
-                    </TableCell>
-                    <TableCell>
-                      {property.priceChangeType === "decreased" ? (
-                        <Chip
-                          icon={<TrendingDown />}
-                          label={`-${formatPrice(property.priceDiff)}`}
-                          color="success"
-                          size="small"
-                        />
-                      ) : (
-                        <Chip
-                          icon={<TrendingUp />}
-                          label={`+${formatPrice(property.priceDiff)}`}
-                          color="error"
-                          size="small"
-                        />
-                      )}
-                    </TableCell>
-                    <TableCell color="text.secondary">
-                      {formatDate(property.createdAt)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Box>
+          <PropertyTable
+            properties={todayPriceChangedProperties}
+            onBookmark={handleBookmark}
+          />
         )}
       </Paper>
 
@@ -475,56 +365,10 @@ export default function DashboardPage() {
             </Typography>
           </Box>
         ) : (
-          <Box sx={{ overflowX: "auto" }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 600 }}>Property</TableCell>
-                  <TableCell sx={{ fontWeight: 600, width: 140 }}>
-                    Current price
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600, width: 120 }}>
-                    Posted
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600, width: 120 }}>
-                    Link
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {todayBookmarkedProperties.map((property) => (
-                  <TableRow key={`bookmarked-${property.id}`} hover>
-                    <TableCell sx={{ minWidth: 320 }}>
-                      <Typography fontWeight={600} noWrap>
-                        {property.title}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" noWrap>
-                        {property.description}
-                      </Typography>
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>
-                      {property.lastPrice || formatPrice(property.price)}
-                    </TableCell>
-                    <TableCell color="text.secondary">
-                      {formatDate(property.createdAt)}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        href={property.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        variant="outlined"
-                        size="small"
-                        sx={{ textTransform: "none", borderRadius: 2 }}
-                      >
-                        Open
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Box>
+          <PropertyTable
+            properties={todayBookmarkedProperties}
+            onBookmark={handleBookmark}
+          />
         )}
       </Paper>
     </Box>
