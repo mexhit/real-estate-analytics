@@ -31,6 +31,7 @@ interface Product {
   createdAt: number;
   firstPrice: string;
   lastPrice: string;
+  bookmarked: boolean;
 }
 
 interface DashboardMetric {
@@ -46,6 +47,9 @@ export default function DashboardPage() {
   const [todayPriceChangedTotal, setTodayPriceChangedTotal] = React.useState(0);
   const [todayPriceChangedProperties, setTodayPriceChangedProperties] =
     React.useState<Product[]>([]);
+  const [todayBookmarkedTotal, setTodayBookmarkedTotal] = React.useState(0);
+  const [todayBookmarkedProperties, setTodayBookmarkedProperties] =
+    React.useState<Product[]>([]);
 
   React.useEffect(() => {
     const fetchDashboard = async () => {
@@ -54,7 +58,8 @@ export default function DashboardPage() {
 
       try {
         setLoading(true);
-        const [todayRes, todayPriceChangedRes] = await Promise.all([
+        const [todayRes, todayPriceChangedRes, todayBookmarkedRes] =
+          await Promise.all([
           propertiesApi.getPaginatedProperties({
             limit: 1,
             page: 1,
@@ -68,11 +73,20 @@ export default function DashboardPage() {
             toDate: todayEnd,
             onlyPriceChanged: true,
           }),
+          propertiesApi.getPaginatedProperties({
+            limit: 8,
+            page: 1,
+            fromDate: todayStart,
+            toDate: todayEnd,
+            onlyBookmarked: true,
+          }),
         ]);
 
         setTodayPostedTotal(todayRes.total);
         setTodayPriceChangedTotal(todayPriceChangedRes.total);
         setTodayPriceChangedProperties(todayPriceChangedRes.data);
+        setTodayBookmarkedTotal(todayBookmarkedRes.total);
+        setTodayBookmarkedProperties(todayBookmarkedRes.data);
       } catch (err) {
         setError((err as Error).message);
       } finally {
@@ -408,6 +422,103 @@ export default function DashboardPage() {
                     </TableCell>
                     <TableCell color="text.secondary">
                       {formatDate(property.createdAt)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Box>
+        )}
+      </Paper>
+
+      <Paper
+        elevation={0}
+        sx={{
+          mt: 3,
+          borderRadius: 2,
+          border: "1px solid rgba(148, 163, 184, 0.22)",
+          backgroundColor: "rgba(255,255,255,0.9)",
+          overflow: "hidden",
+        }}
+      >
+        <Box
+          px={2.5}
+          py={2}
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          gap={2}
+          flexWrap="wrap"
+        >
+          <Box>
+            <Typography variant="h6" fontWeight={700}>
+              Bookmarked properties posted today
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Today&apos;s listings you have already marked for follow-up.
+            </Typography>
+          </Box>
+          <Chip
+            label={loading ? "Loading..." : `${todayBookmarkedTotal} bookmarked today`}
+            sx={{ borderRadius: 2 }}
+          />
+        </Box>
+
+        {loading ? (
+          <Box p={3} textAlign="center">
+            <CircularProgress size={24} />
+          </Box>
+        ) : todayBookmarkedProperties.length === 0 ? (
+          <Box px={2.5} py={3}>
+            <Typography color="text.secondary">
+              No bookmarked properties were posted today.
+            </Typography>
+          </Box>
+        ) : (
+          <Box sx={{ overflowX: "auto" }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 600 }}>Property</TableCell>
+                  <TableCell sx={{ fontWeight: 600, width: 140 }}>
+                    Current price
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600, width: 120 }}>
+                    Posted
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600, width: 120 }}>
+                    Link
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {todayBookmarkedProperties.map((property) => (
+                  <TableRow key={`bookmarked-${property.id}`} hover>
+                    <TableCell sx={{ minWidth: 320 }}>
+                      <Typography fontWeight={600} noWrap>
+                        {property.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" noWrap>
+                        {property.description}
+                      </Typography>
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>
+                      {property.lastPrice || formatPrice(property.price)}
+                    </TableCell>
+                    <TableCell color="text.secondary">
+                      {formatDate(property.createdAt)}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        href={property.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="outlined"
+                        size="small"
+                        sx={{ textTransform: "none", borderRadius: 2 }}
+                      >
+                        Open
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
