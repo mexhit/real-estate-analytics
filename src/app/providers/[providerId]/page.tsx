@@ -108,7 +108,10 @@ export default function ProviderPropertiesPage() {
 
         <Box display="flex" gap={1}>
           <Button component={Link} href="/" variant="outlined">
-            Back to Products
+            Dashboard
+          </Button>
+          <Button component={Link} href="/properties" variant="outlined">
+            Properties
           </Button>
           <LogoutButton />
         </Box>

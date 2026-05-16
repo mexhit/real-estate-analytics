@@ -3,30 +3,22 @@
 import * as React from "react";
 import Link from "next/link";
 import {
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Paper,
+  Stack,
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  TablePagination,
   Typography,
-  Box,
-  CircularProgress,
-  Button,
-  Chip,
-  Tooltip,
-  IconButton,
-  Divider,
-  FormControlLabel,
-  Switch,
 } from "@mui/material";
-import { NewReleases, StarBorderOutlined, Star } from "@mui/icons-material";
-import { useSearchParams, useRouter } from "next/navigation";
+import { Today, TrendingDown, TrendingUp } from "@mui/icons-material";
+import dayjs from "dayjs";
 import { propertiesApi } from "@/api/properties";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import dayjs, { Dayjs } from "dayjs";
 import { LogoutButton } from "@/app/LogoutButton";
 
 interface Product {
@@ -35,118 +27,52 @@ interface Product {
   title: string;
   description: string;
   price: number;
-  providerPropertyCount: string;
   url: string;
-  seen: boolean;
-  hasPriceChanged: boolean;
   createdAt: number;
-  bookmarked: boolean;
-  firstPostedAt: string;
-  lastPostedAt: string;
   firstPrice: string;
   lastPrice: string;
 }
 
-export default function ProductsPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+interface DashboardMetric {
+  label: string;
+  value: string;
+  accent: string;
+}
 
-  // Get initial page from URL (default 0)
-  const initialPage = parseInt(searchParams.get("page") || "0", 10);
-
-  const [products, setProducts] = React.useState<Product[]>([]);
-  const [totalProducts, setTotalProducts] = React.useState(0);
+export default function DashboardPage() {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [fromDate, setFromDate] = React.useState<Dayjs | null>(() => {
-    if (typeof window !== "undefined") {
-      const storeFromDate = localStorage.getItem("fromDate");
-
-      return storeFromDate ? dayjs(storeFromDate) : null;
-    }
-
-    return null;
-  });
-  const [toDate, setToDate] = React.useState<Dayjs | null>(() => {
-    if (typeof window !== "undefined") {
-      const storeToDate = localStorage.getItem("toDate");
-
-      return storeToDate ? dayjs(storeToDate) : null;
-    }
-
-    return null;
-  });
-
-  const [page, setPage] = React.useState(initialPage);
-  const [rowsPerPage, setRowsPerPage] = React.useState(() => {
-    if (typeof window !== "undefined") {
-      return parseInt(localStorage.getItem("rowsPerPage") || "10", 10);
-    }
-
-    return 10;
-  });
-  const [onlyUnseen, setOnlyUnseen] = React.useState(false);
-  const [onlyBookmarked, setOnlyBookmarked] = React.useState(false);
-  const [onlyPriceChanged, setOnlyPriceChanged] = React.useState(false);
-
-  // Update URL when page changes
-  const updateUrl = React.useCallback(
-    (newPage: number) => {
-      const params = new URLSearchParams(window.location.search);
-      params.set("page", String(newPage));
-      router.replace(`?${params.toString()}`);
-    },
-    [router],
-  );
-
-  const handleBookmark = async (propertyId: number) => {
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.id === propertyId ? { ...p, bookmarked: !p.bookmarked } : p,
-      ),
-    );
-
-    await propertiesApi.bookmarkProperty({
-      propertyId: propertyId,
-      bookmarked: !products.find((p) => p.id === propertyId)?.bookmarked,
-    });
-  };
-
-  function formatPeriod(from: string | Date, to: string | Date) {
-    const start = dayjs(from);
-    const end = dayjs(to);
-
-    const days = end.diff(start, "day");
-
-    if (days < 7) {
-      return `${days} day${days !== 1 ? "s" : ""}`;
-    }
-
-    if (days < 30) {
-      const weeks = Math.floor(days / 7);
-      return `${weeks} week${weeks !== 1 ? "s" : ""}`;
-    }
-
-    const months = Math.floor(days / 30);
-    return `${months} month${months !== 1 ? "s" : ""}`;
-  }
+  const [todayPostedTotal, setTodayPostedTotal] = React.useState(0);
+  const [todayPriceChangedTotal, setTodayPriceChangedTotal] = React.useState(0);
+  const [todayPriceChangedProperties, setTodayPriceChangedProperties] =
+    React.useState<Product[]>([]);
 
   React.useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchDashboard = async () => {
+      const todayStart = dayjs().startOf("day").valueOf();
+      const todayEnd = dayjs().endOf("day").valueOf();
+
       try {
         setLoading(true);
-        const res = await propertiesApi.getPaginatedProperties({
-          limit: rowsPerPage,
-          page: page + 1,
-          fromDate: fromDate ? fromDate.startOf("day").valueOf() : undefined,
-          toDate: toDate ? toDate.endOf("day").valueOf() : undefined,
-          onlyUnseen,
-          onlyBookmarked,
-          onlyPriceChanged,
-        });
+        const [todayRes, todayPriceChangedRes] = await Promise.all([
+          propertiesApi.getPaginatedProperties({
+            limit: 1,
+            page: 1,
+            fromDate: todayStart,
+            toDate: todayEnd,
+          }),
+          propertiesApi.getPaginatedProperties({
+            limit: 8,
+            page: 1,
+            fromDate: todayStart,
+            toDate: todayEnd,
+            onlyPriceChanged: true,
+          }),
+        ]);
 
-        setProducts(res.data);
-        setTotalProducts(res.total);
+        setTodayPostedTotal(todayRes.total);
+        setTodayPriceChangedTotal(todayPriceChangedRes.total);
+        setTodayPriceChangedProperties(todayPriceChangedRes.data);
       } catch (err) {
         setError((err as Error).message);
       } finally {
@@ -154,53 +80,16 @@ export default function ProductsPage() {
       }
     };
 
-    fetchProducts();
-  }, [
-    page,
-    rowsPerPage,
-    fromDate,
-    toDate,
-    onlyUnseen,
-    onlyBookmarked,
-    onlyPriceChanged,
-  ]);
+    fetchDashboard();
+  }, []);
 
-  React.useEffect(() => {
-    localStorage.setItem("rowsPerPage", String(rowsPerPage));
-  }, [rowsPerPage]);
-
-  React.useEffect(() => {
-    const fromDateStr = fromDate ? fromDate.toISOString() : "";
-
-    localStorage.setItem("fromDate", fromDateStr);
-  }, [fromDate]);
-
-  React.useEffect(() => {
-    const toDateStr = toDate ? toDate.toISOString() : "";
-
-    localStorage.setItem("toDate", String(toDateStr));
-  }, [toDate]);
-
-  const handleChangePage = (_: unknown, newPage: number) => {
-    setPage(newPage);
-    updateUrl(newPage);
-  };
-
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const newLimit = parseInt(event.target.value, 10);
-    setRowsPerPage(newLimit);
-    setPage(0);
-    updateUrl(0);
-  };
-
-  const formatDate = (date: number | string) =>
-    new Intl.DateTimeFormat("en-GB", {
+  function formatDate(date: number | string) {
+    return new Intl.DateTimeFormat("en-GB", {
       day: "2-digit",
       month: "short",
       year: "numeric",
     }).format(new Date(date));
+  }
 
   function formatPrice(value: number | null | undefined): string {
     if (value == null || isNaN(value)) return "-";
@@ -215,7 +104,6 @@ export default function ProductsPage() {
   function parsePriceToNumber(price: string | null | undefined): number | null {
     if (!price) return null;
 
-    // Keep digits only
     const numeric = price.replace(/[^\d]/g, "");
 
     if (!numeric) return null;
@@ -223,41 +111,55 @@ export default function ProductsPage() {
     return Number(numeric);
   }
 
-  const getPriceChangeInfo = (firstPrice: string, lastPrice: string) => {
-    const firstPriceNum = parsePriceToNumber(firstPrice);
-    const lastPriceNum = parsePriceToNumber(lastPrice);
+  const todayPriceChangedWithDiff = todayPriceChangedProperties.map((p) => {
+    const firstPriceNum = parsePriceToNumber(p.firstPrice);
+    const lastPriceNum = parsePriceToNumber(p.lastPrice);
 
     if (firstPriceNum != null && lastPriceNum != null) {
       if (lastPriceNum > firstPriceNum) {
         return {
-          type: "increased",
-          diff: lastPriceNum - firstPriceNum,
+          ...p,
+          priceChangeType: "increased" as const,
+          priceDiff: lastPriceNum - firstPriceNum,
         };
       }
 
       if (lastPriceNum < firstPriceNum) {
         return {
-          type: "decreased",
-          diff: firstPriceNum - lastPriceNum,
+          ...p,
+          priceChangeType: "decreased" as const,
+          priceDiff: firstPriceNum - lastPriceNum,
         };
       }
     }
 
     return {
-      type: "unchanged",
-      diff: 0,
-    };
-  };
-
-  const productsWithPriceChange = products.map((p) => {
-    const change = getPriceChangeInfo(p.firstPrice, p.lastPrice);
-
-    return {
       ...p,
-      priceChangeType: change.type,
-      priceDiff: formatPrice(change.diff),
+      priceChangeType: "unchanged" as const,
+      priceDiff: 0,
     };
   });
+
+  const dashboardMetrics: DashboardMetric[] = [
+    {
+      label: "Posted today",
+      value: String(todayPostedTotal),
+      accent: "#0f766e",
+    },
+    {
+      label: "Price changes today",
+      value: String(todayPriceChangedTotal),
+      accent: "#b45309",
+    },
+    {
+      label: "Change rate",
+      value:
+        todayPostedTotal > 0
+          ? `${Math.round((todayPriceChangedTotal / todayPostedTotal) * 100)}%`
+          : "0%",
+      accent: "#2563eb",
+    },
+  ];
 
   if (error) {
     return (
@@ -268,300 +170,251 @@ export default function ProductsPage() {
   }
 
   return (
-    <Box p={3}>
+    <Box
+      p={{ xs: 2, md: 3 }}
+      sx={{
+        minHeight: "100vh",
+        background:
+          "linear-gradient(180deg, #f8fafc 0%, #eef2ff 44%, #f8fafc 100%)",
+      }}
+    >
       <Box
         display="flex"
         justifyContent="space-between"
         alignItems="center"
         gap={2}
         mb={2}
+        flexWrap="wrap"
       >
-        <Typography variant="h5" fontWeight={600}>
-          Properties
-        </Typography>
-        <LogoutButton />
-      </Box>
-      <Box mb={2} display="flex" gap={2} alignItems="center" flexWrap="wrap">
-        <DatePicker
-          label="From date"
-          value={fromDate}
-          onChange={(newValue) => {
-            setFromDate(newValue);
-            setPage(0);
-            updateUrl(0);
-          }}
-          slotProps={{ textField: { size: "small" } }}
-        />
-
-        <DatePicker
-          label="To date"
-          value={toDate}
-          onChange={(newValue) => {
-            setToDate(newValue);
-            setPage(0);
-            updateUrl(0);
-          }}
-          slotProps={{ textField: { size: "small" } }}
-        />
-
-        {(fromDate || toDate) && (
-          <Button
-            size="small"
-            variant="outlined"
-            onClick={() => {
-              setFromDate(null);
-              setToDate(null);
-              setPage(0);
-              updateUrl(0);
-            }}
-          >
-            Clear
+        <Box>
+          <Typography variant="h5" fontWeight={700}>
+            Property Monitoring
+          </Typography>
+          <Typography variant="body2" color="text.secondary" mt={0.5}>
+            Track today&apos;s new listings and price movement in one view.
+          </Typography>
+        </Box>
+        <Box display="flex" gap={1} alignItems="center">
+          <Button component={Link} href="/properties" variant="outlined">
+            Properties
           </Button>
-        )}
-        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-        <FormControlLabel
-          control={
-            <Switch
-              checked={onlyUnseen}
-              onChange={(e) => {
-                setOnlyUnseen(e.target.checked);
-                setPage(0);
-                updateUrl(0);
-              }}
-            />
-          }
-          label="Only unseen"
-        />
-        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-        <FormControlLabel
-          control={
-            <Switch
-              checked={onlyBookmarked}
-              onChange={(e) => {
-                setOnlyBookmarked(e.target.checked);
-                setPage(0);
-                updateUrl(0);
-              }}
-            />
-          }
-          label="Only bookmarked"
-        />
-        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-        <FormControlLabel
-          control={
-            <Switch
-              checked={onlyPriceChanged}
-              onChange={(e) => {
-                setOnlyPriceChanged(e.target.checked);
-                setPage(0);
-                updateUrl(0);
-              }}
-            />
-          }
-          label="Only price changed"
-        />
+          <LogoutButton />
+        </Box>
       </Box>
-      <Paper
-        elevation={1}
+
+      <Box
         sx={{
-          borderRadius: 2,
-          border: "1px solid",
-          borderColor: "divider",
-          backgroundColor: "#fff",
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            md: "repeat(12, minmax(0, 1fr))",
+          },
+          gap: 2,
+          mb: 3,
         }}
       >
+        <Box sx={{ gridColumn: { xs: "1 / -1", md: "span 7" } }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(3, minmax(0, 1fr))",
+              },
+              gap: 2,
+              height: "100%",
+            }}
+          >
+            {dashboardMetrics.map((metric) => (
+              <Paper
+                key={metric.label}
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  borderRadius: 2,
+                  border: "1px solid rgba(148, 163, 184, 0.22)",
+                  backgroundColor: "rgba(255,255,255,0.9)",
+                  minHeight: 132,
+                }}
+              >
+                <Typography variant="body2" color="text.secondary" mb={2}>
+                  {metric.label}
+                </Typography>
+                {loading ? (
+                  <CircularProgress size={22} />
+                ) : (
+                  <Typography
+                    variant="h3"
+                    fontWeight={700}
+                    sx={{ color: metric.accent, lineHeight: 1.1 }}
+                  >
+                    {metric.value}
+                  </Typography>
+                )}
+              </Paper>
+            ))}
+          </Box>
+        </Box>
+
+        <Paper
+          elevation={0}
+          sx={{
+            gridColumn: { xs: "1 / -1", md: "span 5" },
+            p: 2.5,
+            borderRadius: 2,
+            border: "1px solid rgba(148, 163, 184, 0.22)",
+            backgroundColor: "rgba(15, 23, 42, 0.94)",
+            color: "#fff",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            minHeight: 132,
+          }}
+        >
+          <Box>
+            <Stack direction="row" spacing={1} alignItems="center" mb={1.5}>
+              <Today sx={{ color: "#60a5fa" }} />
+              <Typography variant="subtitle1" fontWeight={700}>
+                Today&apos;s focus
+              </Typography>
+            </Stack>
+            <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.7)" }}>
+              Review today&apos;s properties with price movement, then jump to
+              the full list.
+            </Typography>
+          </Box>
+          <Box
+            mt={2}
+            display="flex"
+            justifyContent="space-between"
+            alignItems="flex-end"
+            gap={2}
+            flexWrap="wrap"
+          >
+            <Typography variant="h4" fontWeight={700}>
+              {loading ? "..." : todayPriceChangedTotal}
+            </Typography>
+            <Button
+              component={Link}
+              href="/properties"
+              variant="contained"
+              sx={{
+                backgroundColor: "#2563eb",
+                textTransform: "none",
+                borderRadius: 2,
+                boxShadow: "none",
+              }}
+            >
+              Open properties
+            </Button>
+          </Box>
+        </Paper>
+      </Box>
+
+      <Paper
+        elevation={0}
+        sx={{
+          borderRadius: 2,
+          border: "1px solid rgba(148, 163, 184, 0.22)",
+          backgroundColor: "rgba(255,255,255,0.9)",
+          overflow: "hidden",
+        }}
+      >
+        <Box
+          px={2.5}
+          py={2}
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          gap={2}
+          flexWrap="wrap"
+        >
+          <Box>
+            <Typography variant="h6" fontWeight={700}>
+              Price changes in today&apos;s posts
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Listings first posted today where the latest price differs from the
+              first captured price.
+            </Typography>
+          </Box>
+          <Chip
+            label={loading ? "Loading..." : `${todayPriceChangedTotal} tracked today`}
+            sx={{ borderRadius: 2 }}
+          />
+        </Box>
+
         {loading ? (
           <Box p={3} textAlign="center">
-            <CircularProgress />
-            <Typography mt={2}>Loading products...</Typography>
+            <CircularProgress size={24} />
+          </Box>
+        ) : todayPriceChangedWithDiff.length === 0 ? (
+          <Box px={2.5} py={3}>
+            <Typography color="text.secondary">
+              No price changes detected on properties posted today.
+            </Typography>
           </Box>
         ) : (
-          <TableContainer>
-            <Table stickyHeader>
+          <Box sx={{ overflowX: "auto" }}>
+            <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell width={40}></TableCell>
-                  <TableCell sx={{ fontWeight: 600, width: 50 }} align="center">
-                    Save
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600, width: 50 }}>ID</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Title</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Property</TableCell>
                   <TableCell sx={{ fontWeight: 600, width: 140 }}>
-                    Price (€)
+                    First price
                   </TableCell>
                   <TableCell sx={{ fontWeight: 600, width: 140 }}>
-                    Price Changed
+                    Latest price
                   </TableCell>
                   <TableCell sx={{ fontWeight: 600, width: 140 }}>
+                    Change
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600, width: 120 }}>
                     Posted
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600, width: 140 }}>
-                    Active For
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600, width: 50 }}>
-                    Repost
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600, width: 130 }}>
-                    URL
                   </TableCell>
                 </TableRow>
               </TableHead>
-
               <TableBody>
-                {productsWithPriceChange.map((p) => (
-                  <TableRow
-                    key={p.id}
-                    hover
-                    sx={{
-                      transition: "0.2s",
-                      backgroundColor: !p.seen ? "#f0f9ff" : "inherit",
-                    }}
-                  >
-                    {/* New icon */}
-                    <TableCell align="center">
-                      {!p.seen && (
-                        <NewReleases
-                          fontSize="small"
-                          sx={{ color: "#0288d1" }}
-                        />
-                      )}
+                {todayPriceChangedWithDiff.map((property) => (
+                  <TableRow key={`today-${property.id}`} hover>
+                    <TableCell sx={{ minWidth: 320 }}>
+                      <Typography fontWeight={600} noWrap>
+                        {property.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" noWrap>
+                        {property.description}
+                      </Typography>
                     </TableCell>
-
-                    <TableCell align="center">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleBookmark(p.id)}
-                      >
-                        {p.bookmarked ? (
-                          <Star sx={{ color: "#fbc02d" }} />
-                        ) : (
-                          <StarBorderOutlined />
-                        )}
-                      </IconButton>
+                    <TableCell>{property.firstPrice || "-"}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>
+                      {property.lastPrice || property.price}
                     </TableCell>
-
-                    {/* ID normal text */}
-                    <TableCell>{p.id}</TableCell>
-
-                    {/* Title */}
-                    <TableCell sx={{ maxWidth: 200 }}>
-                      <Tooltip title={p.title} placement="top" arrow>
-                        <Typography noWrap sx={{ cursor: "default" }}>
-                          {p.title}
-                        </Typography>
-                      </Tooltip>
-                    </TableCell>
-
-                    {/* Description */}
-                    <TableCell sx={{ maxWidth: 250 }}>
-                      <Tooltip title={p.description} placement="top" arrow>
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          noWrap
-                          sx={{ cursor: "default" }}
-                        >
-                          {p.description}
-                        </Typography>
-                      </Tooltip>
-                    </TableCell>
-
-                    {/* Price */}
-                    <TableCell sx={{ fontWeight: 600 }}>{p.price}</TableCell>
-
                     <TableCell>
-                      {p.priceChangeType === "increased" && (
+                      {property.priceChangeType === "decreased" ? (
                         <Chip
-                          label={`↑ +${p.priceDiff}`}
-                          size="small"
-                          color="error"
-                          variant="filled"
-                        />
-                      )}
-
-                      {p.priceChangeType === "decreased" && (
-                        <Chip
-                          label={`↓ -${p.priceDiff}`}
-                          size="small"
+                          icon={<TrendingDown />}
+                          label={`-${formatPrice(property.priceDiff)}`}
                           color="success"
-                          variant="filled"
-                        />
-                      )}
-
-                      {p.priceChangeType === "unchanged" && (
-                        <Chip label="—" size="small" variant="outlined" />
-                      )}
-                    </TableCell>
-
-                    {/* Posted date */}
-                    <TableCell sx={{ width: 140, color: "text.secondary" }}>
-                      {formatDate(p.createdAt)}
-                    </TableCell>
-                    {/* Active for */}
-                    <TableCell sx={{ color: "text.secondary" }}>
-                      <Tooltip
-                        title={`From ${formatDate(p.firstPostedAt)} to ${formatDate(
-                          p.lastPostedAt,
-                        )}`}
-                        arrow
-                      >
-                        <Typography variant="body2" color="text.secondary">
-                          {formatPeriod(p.firstPostedAt, p.lastPostedAt)}
-                        </Typography>
-                      </Tooltip>
-                    </TableCell>
-                    {/* Repost → clickable (provider page) */}
-                    <TableCell>
-                      <Link
-                        href={`/providers/${p.providerId}`}
-                        style={{
-                          textDecoration: "none",
-                        }}
-                        target="_blank"
-                      >
-                        <Chip
-                          label={p.providerPropertyCount}
                           size="small"
-                          color="primary"
-                          variant="outlined"
-                          sx={{ cursor: "pointer" }}
                         />
-                      </Link>
+                      ) : (
+                        <Chip
+                          icon={<TrendingUp />}
+                          label={`+${formatPrice(property.priceDiff)}`}
+                          color="error"
+                          size="small"
+                        />
+                      )}
                     </TableCell>
-
-                    {/* URL */}
-                    <TableCell>
-                      <Button
-                        href={p.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        variant="contained"
-                        size="small"
-                        sx={{
-                          textTransform: "none",
-                          borderRadius: 2,
-                        }}
-                      >
-                        Open
-                      </Button>
+                    <TableCell color="text.secondary">
+                      {formatDate(property.createdAt)}
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
+          </Box>
         )}
-
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={totalProducts}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
       </Paper>
     </Box>
   );
