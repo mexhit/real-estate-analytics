@@ -31,7 +31,10 @@ interface Property {
 }
 
 export default function ProviderPropertiesPage() {
-  const { providerId } = useParams();
+  const params = useParams();
+  const providerId = Array.isArray(params.providerId)
+    ? params.providerId[0]
+    : params.providerId;
   const [properties, setProperties] = React.useState<Property[]>([]);
   const [totalProperties, setTotalProperties] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
@@ -40,6 +43,12 @@ export default function ProviderPropertiesPage() {
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
 
   React.useEffect(() => {
+    if (!providerId) {
+      setError("Provider ID is missing.");
+      setLoading(false);
+      return;
+    }
+
     const fetchProducts = async () => {
       try {
         setLoading(true);
