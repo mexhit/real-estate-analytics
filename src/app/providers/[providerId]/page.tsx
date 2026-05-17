@@ -26,6 +26,8 @@ interface Property {
   title: string;
   description: string;
   price: number;
+  priceAmount?: number | null;
+  squareMeters?: number | null;
   url: string;
   createdAt: number;
 }
@@ -86,6 +88,31 @@ export default function ProviderPropertiesPage() {
       year: "numeric",
     }).format(new Date(date));
 
+  const formatPrice = (value: number | null | undefined) => {
+    if (value == null || isNaN(value)) return "-";
+
+    return `${new Intl.NumberFormat("en-US", {
+      maximumFractionDigits: 0,
+    }).format(value)} €`;
+  };
+
+  const getPricePerSquareMeter = (
+    priceAmount: number | null | undefined,
+    squareMeters: number | null | undefined,
+  ) => {
+    if (
+      priceAmount == null ||
+      squareMeters == null ||
+      isNaN(priceAmount) ||
+      isNaN(squareMeters) ||
+      squareMeters <= 0
+    ) {
+      return null;
+    }
+
+    return priceAmount / squareMeters;
+  };
+
   if (loading) {
     return (
       <Box p={3} textAlign="center">
@@ -141,44 +168,60 @@ export default function ProviderPropertiesPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {properties.map((p) => (
-                <TableRow key={p.id}>
-                  <TableCell>{p.id}</TableCell>
-                  <TableCell>
-                    <Link
-                      href={`/providers/${p.providerId}`}
-                      style={{
-                        color: "#1976d2",
-                        textDecoration: "none",
-                        fontWeight: 500,
-                      }}
-                    >
-                      {p.providerId}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{p.title}</TableCell>
-                  <TableCell>{p.description}</TableCell>
-                  <TableCell>{p.price}</TableCell>
-                  {/* Posted date */}
-                  <TableCell sx={{ width: 140, color: "text.secondary" }}>
-                    {formatDate(p.createdAt)}
-                  </TableCell>
-                  <TableCell>
-                    <a
-                      href={p.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        color: "#1976d2",
-                        textDecoration: "none",
-                        fontWeight: 500,
-                      }}
-                    >
-                      Open
-                    </a>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {properties.map((p) => {
+                const pricePerSquareMeter = getPricePerSquareMeter(
+                  p.priceAmount,
+                  p.squareMeters,
+                );
+
+                return (
+                  <TableRow key={p.id}>
+                    <TableCell>{p.id}</TableCell>
+                    <TableCell>
+                      <Link
+                        href={`/providers/${p.providerId}`}
+                        style={{
+                          color: "#1976d2",
+                          textDecoration: "none",
+                          fontWeight: 500,
+                        }}
+                      >
+                        {p.providerId}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{p.title}</TableCell>
+                    <TableCell>{p.description}</TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight={600}>
+                        {p.price}
+                      </Typography>
+                      {pricePerSquareMeter != null && (
+                        <Typography variant="caption" color="text.secondary">
+                          {formatPrice(pricePerSquareMeter)}/m2
+                        </Typography>
+                      )}
+                    </TableCell>
+                    {/* Posted date */}
+                    <TableCell sx={{ width: 140, color: "text.secondary" }}>
+                      {formatDate(p.createdAt)}
+                    </TableCell>
+                    <TableCell>
+                      <a
+                        href={p.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          color: "#1976d2",
+                          textDecoration: "none",
+                          fontWeight: 500,
+                        }}
+                      >
+                        Open
+                      </a>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </TableContainer>

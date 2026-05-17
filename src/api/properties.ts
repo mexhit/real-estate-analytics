@@ -6,6 +6,8 @@ export interface Property {
   title: string;
   description: string;
   price: number;
+  priceAmount?: number | null;
+  squareMeters?: number | null;
   url: string;
   createdAt: number;
   seen: boolean;

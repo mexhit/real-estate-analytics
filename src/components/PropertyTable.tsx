@@ -24,6 +24,8 @@ export interface PropertyTableItem {
   title: string;
   description: string;
   price: number;
+  priceAmount?: number | null;
+  squareMeters?: number | null;
   providerPropertyCount: string;
   url: string;
   seen: boolean;
@@ -57,6 +59,23 @@ function formatPrice(value: number | null | undefined): string {
   }).format(value);
 
   return `${formatted} €`;
+}
+
+function getPricePerSquareMeter(
+  priceAmount: number | null | undefined,
+  squareMeters: number | null | undefined,
+): number | null {
+  if (
+    priceAmount == null ||
+    squareMeters == null ||
+    isNaN(priceAmount) ||
+    isNaN(squareMeters) ||
+    squareMeters <= 0
+  ) {
+    return null;
+  }
+
+  return priceAmount / squareMeters;
 }
 
 function parsePriceToNumber(price: string | null | undefined): number | null {
@@ -149,6 +168,10 @@ export function PropertyTable({
               property.firstPrice,
               property.lastPrice,
             );
+            const pricePerSquareMeter = getPricePerSquareMeter(
+              property.priceAmount,
+              property.squareMeters,
+            );
 
             return (
               <TableRow
@@ -201,7 +224,16 @@ export function PropertyTable({
                   </Tooltip>
                 </TableCell>
 
-                <TableCell sx={{ fontWeight: 600 }}>{property.price}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>
+                  <Typography variant="body2" fontWeight={600}>
+                    {property.price}
+                  </Typography>
+                  {pricePerSquareMeter != null && (
+                    <Typography variant="caption" color="text.secondary">
+                      {formatPrice(pricePerSquareMeter)}/m2
+                    </Typography>
+                  )}
+                </TableCell>
 
                 <TableCell>
                   {priceChange.type === "increased" && (
