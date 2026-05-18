@@ -309,15 +309,14 @@ export default function DashboardPage() {
         >
           <Box>
             <Typography variant="h6" fontWeight={700}>
-              Price changes in today&apos;s posts
+              3_1 apartments posted today
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Listings first posted today where the latest price differs from the
-              first captured price.
+              Today&apos;s new listings filtered to `APARTMENT_3_1`.
             </Typography>
           </Box>
           <Chip
-            label={loading ? "Loading..." : `${todayPriceChangedTotal} tracked today`}
+            label={loading ? "Loading..." : `${todayApartment31Total} posted today`}
             sx={{ borderRadius: 2 }}
           />
         </Box>
@@ -326,15 +325,15 @@ export default function DashboardPage() {
           <Box p={3} textAlign="center">
             <CircularProgress size={24} />
           </Box>
-        ) : todayPriceChangedProperties.length === 0 ? (
+        ) : todayApartment31Properties.length === 0 ? (
           <Box px={2.5} py={3}>
             <Typography color="text.secondary">
-              No price changes detected on properties posted today.
+              No `APARTMENT_3_1` listings were posted today.
             </Typography>
           </Box>
         ) : (
           <PropertyTable
-            properties={todayPriceChangedProperties}
+            properties={todayApartment31Properties}
             onBookmark={handleBookmark}
           />
         )}
@@ -361,14 +360,15 @@ export default function DashboardPage() {
         >
           <Box>
             <Typography variant="h6" fontWeight={700}>
-              3_1 apartments posted today
+              Price changes in today&apos;s posts
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Today&apos;s new listings filtered to `APARTMENT_3_1`.
+              Listings first posted today where the latest price differs from the
+              first captured price.
             </Typography>
           </Box>
           <Chip
-            label={loading ? "Loading..." : `${todayApartment31Total} posted today`}
+            label={loading ? "Loading..." : `${todayPriceChangedTotal} tracked today`}
             sx={{ borderRadius: 2 }}
           />
         </Box>
@@ -377,15 +377,15 @@ export default function DashboardPage() {
           <Box p={3} textAlign="center">
             <CircularProgress size={24} />
           </Box>
-        ) : todayApartment31Properties.length === 0 ? (
+        ) : todayPriceChangedProperties.length === 0 ? (
           <Box px={2.5} py={3}>
             <Typography color="text.secondary">
-              No `APARTMENT_3_1` listings were posted today.
+              No price changes detected on properties posted today.
             </Typography>
           </Box>
         ) : (
           <PropertyTable
-            properties={todayApartment31Properties}
+            properties={todayPriceChangedProperties}
             onBookmark={handleBookmark}
           />
         )}
