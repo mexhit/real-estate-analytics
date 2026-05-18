@@ -12,13 +12,21 @@ import {
   Divider,
   FormControlLabel,
   Switch,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+  OutlinedInput,
+  Chip,
 } from "@mui/material";
 import { useSearchParams, useRouter } from "next/navigation";
-import { propertiesApi } from "@/api/properties";
+import { PROPERTY_TYPES, propertiesApi, type PropertyType } from "@/api/properties";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs, { Dayjs } from "dayjs";
 import { LogoutButton } from "@/app/LogoutButton";
 import { PropertyTable, type PropertyTableItem } from "@/components/PropertyTable";
+
+const PROPERTY_TYPES_STORAGE_KEY = "propertyTypes";
 
 export default function PropertiesPage() {
   const router = useRouter();
@@ -35,6 +43,7 @@ export default function PropertiesPage() {
 
   const [page, setPage] = React.useState(initialPage);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
+  const [propertyTypes, setPropertyTypes] = React.useState<PropertyType[]>([]);
   const [onlyUnseen, setOnlyUnseen] = React.useState(false);
   const [onlyBookmarked, setOnlyBookmarked] = React.useState(false);
   const [onlyPriceChanged, setOnlyPriceChanged] = React.useState(false);
@@ -66,10 +75,26 @@ export default function PropertiesPage() {
     const storedFromDate = localStorage.getItem("fromDate");
     const storedToDate = localStorage.getItem("toDate");
     const storedRowsPerPage = localStorage.getItem("rowsPerPage");
+    const storedPropertyTypes = localStorage.getItem(PROPERTY_TYPES_STORAGE_KEY);
 
     setFromDate(storedFromDate ? dayjs(storedFromDate) : null);
     setToDate(storedToDate ? dayjs(storedToDate) : null);
     setRowsPerPage(storedRowsPerPage ? parseInt(storedRowsPerPage, 10) : 10);
+    if (storedPropertyTypes) {
+      try {
+        const parsed = JSON.parse(storedPropertyTypes);
+
+        if (Array.isArray(parsed)) {
+          setPropertyTypes(
+            parsed.filter((value): value is PropertyType =>
+              PROPERTY_TYPES.includes(value as PropertyType),
+            ),
+          );
+        }
+      } catch {
+        localStorage.removeItem(PROPERTY_TYPES_STORAGE_KEY);
+      }
+    }
     setPreferencesLoaded(true);
   }, []);
 
@@ -86,6 +111,7 @@ export default function PropertiesPage() {
           page: page + 1,
           fromDate: fromDate ? fromDate.startOf("day").valueOf() : undefined,
           toDate: toDate ? toDate.endOf("day").valueOf() : undefined,
+          propertyTypes: propertyTypes.length > 0 ? propertyTypes : undefined,
           onlyUnseen,
           onlyBookmarked,
           onlyPriceChanged,
@@ -107,6 +133,7 @@ export default function PropertiesPage() {
     rowsPerPage,
     fromDate,
     toDate,
+    propertyTypes,
     onlyUnseen,
     onlyBookmarked,
     onlyPriceChanged,
@@ -139,6 +166,17 @@ export default function PropertiesPage() {
 
     localStorage.setItem("toDate", String(toDateStr));
   }, [preferencesLoaded, toDate]);
+
+  React.useEffect(() => {
+    if (!preferencesLoaded) {
+      return;
+    }
+
+    localStorage.setItem(
+      PROPERTY_TYPES_STORAGE_KEY,
+      JSON.stringify(propertyTypes),
+    );
+  }, [preferencesLoaded, propertyTypes]);
 
   const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
@@ -204,13 +242,45 @@ export default function PropertiesPage() {
           slotProps={{ textField: { size: "small" } }}
         />
 
-        {(fromDate || toDate) && (
+        <FormControl size="small" sx={{ minWidth: 240 }}>
+          <InputLabel id="property-types-label">Property types</InputLabel>
+          <Select
+            labelId="property-types-label"
+            multiple
+            value={propertyTypes}
+            onChange={(event) => {
+              const value = event.target.value;
+              setPropertyTypes(
+                typeof value === "string" ? (value.split(",") as PropertyType[]) : value,
+              );
+              setPage(0);
+              updateUrl(0);
+            }}
+            input={<OutlinedInput label="Property types" />}
+            renderValue={(selected) => (
+              <Box display="flex" gap={0.5} flexWrap="wrap">
+                {selected.map((value) => (
+                  <Chip key={value} label={value} size="small" />
+                ))}
+              </Box>
+            )}
+          >
+            {PROPERTY_TYPES.map((propertyType) => (
+              <MenuItem key={propertyType} value={propertyType}>
+                {propertyType}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        {(fromDate || toDate || propertyTypes.length > 0) && (
           <Button
             size="small"
             variant="outlined"
             onClick={() => {
               setFromDate(null);
               setToDate(null);
+              setPropertyTypes([]);
               setPage(0);
               updateUrl(0);
             }}

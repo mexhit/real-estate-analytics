@@ -23,7 +23,7 @@ export interface PropertyTableItem {
   providerId: string;
   title: string;
   description: string;
-  propertyType?: string | null;
+  propertyType?: import("@/api/properties").PropertyType | null;
   price: number;
   priceAmount?: number | null;
   squareMeters?: number | null;

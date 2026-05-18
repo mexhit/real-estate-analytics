@@ -1,11 +1,26 @@
 import { apiClient } from "@/api/client";
 
+export const PROPERTY_TYPES = [
+  "APARTMENT_1_1",
+  "APARTMENT_2_1",
+  "APARTMENT_3_1",
+  "STUDIO",
+  "PRIVATE_HOUSE",
+  "VILLA",
+  "OFFICE",
+  "LAND",
+  "PARKING",
+  "SHOP",
+] as const;
+
+export type PropertyType = (typeof PROPERTY_TYPES)[number];
+
 export interface Property {
   id: number;
   providerId: string;
   title: string;
   description: string;
-  propertyType?: string | null;
+  propertyType?: PropertyType | null;
   price: number;
   priceAmount?: number | null;
   squareMeters?: number | null;
@@ -30,6 +45,7 @@ export interface GetPaginatedPropertiesParams {
   page: number;
   fromDate?: number;
   toDate?: number;
+  propertyTypes?: PropertyType[];
   onlyUnseen?: boolean;
   onlyBookmarked?: boolean;
   onlyPriceChanged?: boolean;
