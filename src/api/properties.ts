@@ -5,6 +5,7 @@ export interface Property {
   providerId: string;
   title: string;
   description: string;
+  propertyType?: string | null;
   price: number;
   priceAmount?: number | null;
   squareMeters?: number | null;

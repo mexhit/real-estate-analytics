@@ -23,6 +23,7 @@ export interface PropertyTableItem {
   providerId: string;
   title: string;
   description: string;
+  propertyType?: string | null;
   price: number;
   priceAmount?: number | null;
   squareMeters?: number | null;
@@ -150,6 +151,7 @@ export function PropertyTable({
             <TableCell sx={{ fontWeight: 600, width: 50 }}>ID</TableCell>
             <TableCell sx={{ fontWeight: 600 }}>Title</TableCell>
             <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
+            <TableCell sx={{ fontWeight: 600, width: 140 }}>Type</TableCell>
             <TableCell sx={{ fontWeight: 600, width: 140 }}>Price (€)</TableCell>
             <TableCell sx={{ fontWeight: 600, width: 140 }}>
               Price Changed
@@ -222,6 +224,12 @@ export function PropertyTable({
                       {property.description}
                     </Typography>
                   </Tooltip>
+                </TableCell>
+
+                <TableCell sx={{ color: "text.secondary" }}>
+                  <Typography variant="body2">
+                    {property.propertyType || "-"}
+                  </Typography>
                 </TableCell>
 
                 <TableCell sx={{ fontWeight: 600 }}>
