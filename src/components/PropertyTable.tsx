@@ -230,6 +230,11 @@ export function PropertyTable({
                   <Typography variant="body2">
                     {property.propertyType || "-"}
                   </Typography>
+                  {property.squareMeters != null && (
+                    <Typography variant="caption" color="text.secondary">
+                      {property.squareMeters} m²
+                    </Typography>
+                  )}
                 </TableCell>
 
                 <TableCell sx={{ fontWeight: 600 }}>
