@@ -3,6 +3,7 @@
 import Link from "next/link";
 import * as React from "react";
 import {
+  Box,
   Button,
   Chip,
   IconButton,
@@ -15,7 +16,12 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { NewReleases, Star, StarBorderOutlined } from "@mui/icons-material";
+import {
+  ErrorOutline,
+  NewReleases,
+  Star,
+  StarBorderOutlined,
+} from "@mui/icons-material";
 import dayjs from "dayjs";
 
 export interface PropertyTableItem {
@@ -23,6 +29,7 @@ export interface PropertyTableItem {
   providerId: string;
   title: string;
   description: string;
+  aiResponseError?: string | null;
   propertyType?: import("@/api/properties").PropertyType | null;
   price: number;
   priceAmount?: number | null;
@@ -185,9 +192,28 @@ export function PropertyTable({
                 }}
               >
                 <TableCell align="center">
-                  {!property.seen && (
-                    <NewReleases fontSize="small" sx={{ color: "#0288d1" }} />
-                  )}
+                  <Box
+                    sx={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 0.5,
+                    }}
+                  >
+                    {!property.seen && (
+                      <Tooltip title="New property" arrow>
+                        <NewReleases fontSize="small" sx={{ color: "#0288d1" }} />
+                      </Tooltip>
+                    )}
+                    {property.aiResponseError && (
+                      <Tooltip
+                        title={`AI extraction error: ${property.aiResponseError}`}
+                        arrow
+                      >
+                        <ErrorOutline fontSize="small" color="error" />
+                      </Tooltip>
+                    )}
+                  </Box>
                 </TableCell>
 
                 <TableCell align="center">

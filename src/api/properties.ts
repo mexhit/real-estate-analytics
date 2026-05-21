@@ -20,6 +20,7 @@ export interface Property {
   providerId: string;
   title: string;
   description: string;
+  aiResponseError?: string | null;
   propertyType?: PropertyType | null;
   price: number;
   priceAmount?: number | null;
