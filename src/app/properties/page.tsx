@@ -77,7 +77,7 @@ export default function PropertiesPage() {
 
       setProducts((prev) =>
         prev.map((property) =>
-          property.id === propertyId ? updatedProperty : property,
+          property.id === propertyId ? { ...property, ...updatedProperty } : property,
         ),
       );
     } catch (err) {

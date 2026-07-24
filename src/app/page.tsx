@@ -62,7 +62,9 @@ export default function DashboardPage() {
     try {
       const updatedProperty = await propertiesApi.extractAiMetadata({ propertyId });
       const updateCollection = (items: PropertyTableItem[]) =>
-        items.map((item) => (item.id === propertyId ? updatedProperty : item));
+        items.map((item) =>
+          item.id === propertyId ? { ...item, ...updatedProperty } : item,
+        );
 
       setTodayPriceChangedProperties((prev) => updateCollection(prev));
       setTodayApartment31Properties((prev) => updateCollection(prev));
