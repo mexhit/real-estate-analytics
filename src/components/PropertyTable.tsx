@@ -6,6 +6,7 @@ import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   IconButton,
   Table,
   TableBody,
@@ -48,6 +49,7 @@ export interface PropertyTableItem {
 interface PropertyTableProps {
   properties: PropertyTableItem[];
   onBookmark: (propertyId: number) => void | Promise<void>;
+  onRetryAiMetadata?: (propertyId: number) => void | Promise<void>;
   stickyHeader?: boolean;
 }
 
@@ -144,8 +146,31 @@ function getPriceChangeInfo(firstPrice: string, lastPrice: string) {
 export function PropertyTable({
   properties,
   onBookmark,
+  onRetryAiMetadata,
   stickyHeader = true,
 }: PropertyTableProps) {
+  const [retryingAiMetadataIds, setRetryingAiMetadataIds] = React.useState<
+    Set<number>
+  >(new Set());
+
+  const handleRetryAiMetadata = async (propertyId: number) => {
+    if (!onRetryAiMetadata || retryingAiMetadataIds.has(propertyId)) {
+      return;
+    }
+
+    setRetryingAiMetadataIds((prev) => new Set(prev).add(propertyId));
+
+    try {
+      await onRetryAiMetadata(propertyId);
+    } finally {
+      setRetryingAiMetadataIds((prev) => {
+        const next = new Set(prev);
+        next.delete(propertyId);
+        return next;
+      });
+    }
+  };
+
   return (
     <TableContainer>
       <Table stickyHeader={stickyHeader}>
@@ -207,10 +232,28 @@ export function PropertyTable({
                     )}
                     {property.aiResponseError && (
                       <Tooltip
-                        title={`AI extraction error: ${property.aiResponseError}`}
+                        title={`AI extraction error: ${property.aiResponseError}. Click to retry.`}
                         arrow
                       >
-                        <ErrorOutline fontSize="small" color="error" />
+                        <span>
+                          <IconButton
+                            aria-label={`Retry AI extraction for property ${property.id}`}
+                            color="error"
+                            disabled={
+                              !onRetryAiMetadata ||
+                              retryingAiMetadataIds.has(property.id)
+                            }
+                            onClick={() => handleRetryAiMetadata(property.id)}
+                            size="small"
+                            sx={{ p: 0.25 }}
+                          >
+                            {retryingAiMetadataIds.has(property.id) ? (
+                              <CircularProgress color="error" size={18} />
+                            ) : (
+                              <ErrorOutline fontSize="small" />
+                            )}
+                          </IconButton>
+                        </span>
                       </Tooltip>
                     )}
                   </Box>

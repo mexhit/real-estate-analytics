@@ -58,6 +58,20 @@ export default function DashboardPage() {
     });
   };
 
+  const handleRetryAiMetadata = async (propertyId: number) => {
+    try {
+      const updatedProperty = await propertiesApi.extractAiMetadata({ propertyId });
+      const updateCollection = (items: PropertyTableItem[]) =>
+        items.map((item) => (item.id === propertyId ? updatedProperty : item));
+
+      setTodayPriceChangedProperties((prev) => updateCollection(prev));
+      setTodayApartment31Properties((prev) => updateCollection(prev));
+      setTodayBookmarkedProperties((prev) => updateCollection(prev));
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
   React.useEffect(() => {
     const fetchDashboard = async () => {
       const todayStart = dayjs().startOf("day").valueOf();
@@ -335,6 +349,7 @@ export default function DashboardPage() {
           <PropertyTable
             properties={todayApartment31Properties}
             onBookmark={handleBookmark}
+            onRetryAiMetadata={handleRetryAiMetadata}
           />
         )}
       </Paper>
@@ -387,6 +402,7 @@ export default function DashboardPage() {
           <PropertyTable
             properties={todayPriceChangedProperties}
             onBookmark={handleBookmark}
+            onRetryAiMetadata={handleRetryAiMetadata}
           />
         )}
       </Paper>
@@ -438,6 +454,7 @@ export default function DashboardPage() {
           <PropertyTable
             properties={todayBookmarkedProperties}
             onBookmark={handleBookmark}
+            onRetryAiMetadata={handleRetryAiMetadata}
           />
         )}
       </Paper>

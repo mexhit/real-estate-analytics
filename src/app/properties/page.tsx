@@ -71,6 +71,20 @@ export default function PropertiesPage() {
     });
   };
 
+  const handleRetryAiMetadata = async (propertyId: number) => {
+    try {
+      const updatedProperty = await propertiesApi.extractAiMetadata({ propertyId });
+
+      setProducts((prev) =>
+        prev.map((property) =>
+          property.id === propertyId ? updatedProperty : property,
+        ),
+      );
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
   React.useEffect(() => {
     const storedFromDate = localStorage.getItem("fromDate");
     const storedToDate = localStorage.getItem("toDate");
@@ -346,7 +360,11 @@ export default function PropertiesPage() {
             <Typography mt={2}>Loading products...</Typography>
           </Box>
         ) : (
-          <PropertyTable properties={products} onBookmark={handleBookmark} />
+          <PropertyTable
+            properties={products}
+            onBookmark={handleBookmark}
+            onRetryAiMetadata={handleRetryAiMetadata}
+          />
         )}
 
         <TablePagination

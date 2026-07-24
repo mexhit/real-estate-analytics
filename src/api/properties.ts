@@ -63,6 +63,10 @@ export interface BookmarkPropertyParams {
   bookmarked?: boolean;
 }
 
+export interface ExtractAiMetadataParams {
+  propertyId: number;
+}
+
 class PropertiesApi {
   getPaginatedProperties(
     params: GetPaginatedPropertiesParams,
@@ -84,6 +88,12 @@ class PropertiesApi {
 
   bookmarkProperty({ propertyId, bookmarked }: BookmarkPropertyParams) {
     return apiClient.put(`/properties/${propertyId}/bookmark/${bookmarked}`);
+  }
+
+  extractAiMetadata({ propertyId }: ExtractAiMetadataParams): Promise<Property> {
+    return apiClient
+      .post("/properties/ai-metadata", { propertyId })
+      .then((response: { data: Property }) => response.data);
   }
 }
 
