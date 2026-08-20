@@ -206,6 +206,20 @@ export default function PropertiesPage() {
     updateUrl(0);
   };
 
+  const filterByDay = (date: Dayjs) => {
+    setFromDate(date.startOf("day"));
+    setToDate(date.endOf("day"));
+    setPage(0);
+    updateUrl(0);
+  };
+
+  const today = dayjs();
+  const yesterday = today.subtract(1, "day");
+  const isDaySelected = (date: Dayjs) =>
+    Boolean(
+      fromDate?.isSame(date, "day") && toDate?.isSame(date, "day"),
+    );
+
   if (error) {
     return (
       <Box p={3} textAlign="center">
@@ -234,6 +248,20 @@ export default function PropertiesPage() {
         </Box>
       </Box>
       <Box mb={2} display="flex" gap={2} alignItems="center" flexWrap="wrap">
+        <Button
+          variant={isDaySelected(today) ? "contained" : "outlined"}
+          onClick={() => filterByDay(today)}
+        >
+          Today&apos;s properties
+        </Button>
+
+        <Button
+          variant={isDaySelected(yesterday) ? "contained" : "outlined"}
+          onClick={() => filterByDay(yesterday)}
+        >
+          Yesterday&apos;s properties
+        </Button>
+
         <DatePicker
           label="From date"
           value={fromDate}
