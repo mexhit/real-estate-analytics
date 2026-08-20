@@ -41,6 +41,11 @@ export interface PaginatedResponse<T> {
   total: number;
 }
 
+export interface NewPropertySeriesPoint {
+  date: string;
+  count: number;
+}
+
 export interface GetPaginatedPropertiesParams {
   limit: number;
   page: number;
@@ -68,6 +73,12 @@ export interface ExtractAiMetadataParams {
 }
 
 class PropertiesApi {
+  getNewPropertiesSeries(): Promise<NewPropertySeriesPoint[]> {
+    return apiClient
+      .get("/properties/analytics/new-properties")
+      .then((response: { data: NewPropertySeriesPoint[] }) => response.data);
+  }
+
   getPaginatedProperties(
     params: GetPaginatedPropertiesParams,
   ): Promise<PaginatedResponse<Property>> {
@@ -90,7 +101,9 @@ class PropertiesApi {
     return apiClient.put(`/properties/${propertyId}/bookmark/${bookmarked}`);
   }
 
-  extractAiMetadata({ propertyId }: ExtractAiMetadataParams): Promise<Property> {
+  extractAiMetadata({
+    propertyId,
+  }: ExtractAiMetadataParams): Promise<Property> {
     return apiClient
       .post("/properties/ai-metadata", { propertyId })
       .then((response: { data: Property }) => response.data);

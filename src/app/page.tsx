@@ -13,11 +13,20 @@ import {
 } from "@mui/material";
 import { Today } from "@mui/icons-material";
 import dayjs from "dayjs";
-import { propertiesApi, PROPERTY_TYPES } from "@/api/properties";
+import {
+  propertiesApi,
+  PROPERTY_TYPES,
+  type NewPropertySeriesPoint,
+} from "@/api/properties";
 import { LogoutButton } from "@/app/LogoutButton";
-import { PropertyTable, type PropertyTableItem } from "@/components/PropertyTable";
+import {
+  PropertyTable,
+  type PropertyTableItem,
+} from "@/components/PropertyTable";
+import { NewPropertiesChart } from "@/components/NewPropertiesChart";
 
 interface DashboardMetric {
+  kind: "new-properties" | "price-changes" | "change-rate";
   label: string;
   value: string;
   accent: string;
@@ -26,6 +35,11 @@ interface DashboardMetric {
 export default function DashboardPage() {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [newPropertySeries, setNewPropertySeries] = React.useState<
+    NewPropertySeriesPoint[]
+  >([]);
+  const [chartLoading, setChartLoading] = React.useState(true);
+  const [chartError, setChartError] = React.useState<string | null>(null);
   const [todayPostedTotal, setTodayPostedTotal] = React.useState(0);
   const [todayPriceChangedTotal, setTodayPriceChangedTotal] = React.useState(0);
   const [todayPriceChangedProperties, setTodayPriceChangedProperties] =
@@ -40,7 +54,9 @@ export default function DashboardPage() {
   const handleBookmark = async (propertyId: number) => {
     const updateCollection = (items: PropertyTableItem[]) =>
       items.map((item) =>
-        item.id === propertyId ? { ...item, bookmarked: !item.bookmarked } : item,
+        item.id === propertyId
+          ? { ...item, bookmarked: !item.bookmarked }
+          : item,
       );
 
     const currentProperty =
@@ -60,7 +76,9 @@ export default function DashboardPage() {
 
   const handleRetryAiMetadata = async (propertyId: number) => {
     try {
-      const updatedProperty = await propertiesApi.extractAiMetadata({ propertyId });
+      const updatedProperty = await propertiesApi.extractAiMetadata({
+        propertyId,
+      });
       const updateCollection = (items: PropertyTableItem[]) =>
         items.map((item) =>
           item.id === propertyId ? { ...item, ...updatedProperty } : item,
@@ -75,6 +93,18 @@ export default function DashboardPage() {
   };
 
   React.useEffect(() => {
+    const fetchNewPropertySeries = async () => {
+      try {
+        setChartLoading(true);
+        setChartError(null);
+        setNewPropertySeries(await propertiesApi.getNewPropertiesSeries());
+      } catch (err) {
+        setChartError((err as Error).message);
+      } finally {
+        setChartLoading(false);
+      }
+    };
+
     const fetchDashboard = async () => {
       const todayStart = dayjs().startOf("day").valueOf();
       const todayEnd = dayjs().endOf("day").valueOf();
@@ -86,8 +116,7 @@ export default function DashboardPage() {
           todayPriceChangedRes,
           todayApartment31Res,
           todayBookmarkedRes,
-        ] =
-          await Promise.all([
+        ] = await Promise.all([
           propertiesApi.getPaginatedProperties({
             limit: 1,
             page: 1,
@@ -131,21 +160,27 @@ export default function DashboardPage() {
       }
     };
 
-    fetchDashboard();
+    void fetchNewPropertySeries();
+    void fetchDashboard();
   }, []);
+
+  const todayNewPropertyTotal = newPropertySeries.at(-1)?.count ?? 0;
 
   const dashboardMetrics: DashboardMetric[] = [
     {
-      label: "Posted today",
-      value: String(todayPostedTotal),
+      kind: "new-properties",
+      label: "New properties today",
+      value: String(todayNewPropertyTotal),
       accent: "#0f766e",
     },
     {
+      kind: "price-changes",
       label: "Price changes today",
       value: String(todayPriceChangedTotal),
       accent: "#b45309",
     },
     {
+      kind: "change-rate",
       label: "Change rate",
       value:
         todayPostedTotal > 0
@@ -234,7 +269,19 @@ export default function DashboardPage() {
                 <Typography variant="body2" color="text.secondary" mb={2}>
                   {metric.label}
                 </Typography>
-                {loading ? (
+                {metric.kind === "new-properties" ? (
+                  chartLoading ? (
+                    <CircularProgress size={22} />
+                  ) : (
+                    <Typography
+                      variant="h3"
+                      fontWeight={700}
+                      sx={{ color: metric.accent, lineHeight: 1.1 }}
+                    >
+                      {chartError ? "—" : metric.value}
+                    </Typography>
+                  )
+                ) : loading ? (
                   <CircularProgress size={22} />
                 ) : (
                   <Typography
@@ -304,7 +351,6 @@ export default function DashboardPage() {
           </Box>
         </Paper>
       </Box>
-
       <Paper
         elevation={0}
         sx={{
@@ -332,7 +378,9 @@ export default function DashboardPage() {
             </Typography>
           </Box>
           <Chip
-            label={loading ? "Loading..." : `${todayApartment31Total} posted today`}
+            label={
+              loading ? "Loading..." : `${todayApartment31Total} posted today`
+            }
             sx={{ borderRadius: 2 }}
           />
         </Box>
@@ -380,12 +428,14 @@ export default function DashboardPage() {
               Price changes in today&apos;s posts
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Listings first posted today where the latest price differs from the
-              first captured price.
+              Listings first posted today where the latest price differs from
+              the first captured price.
             </Typography>
           </Box>
           <Chip
-            label={loading ? "Loading..." : `${todayPriceChangedTotal} tracked today`}
+            label={
+              loading ? "Loading..." : `${todayPriceChangedTotal} tracked today`
+            }
             sx={{ borderRadius: 2 }}
           />
         </Box>
@@ -437,7 +487,11 @@ export default function DashboardPage() {
             </Typography>
           </Box>
           <Chip
-            label={loading ? "Loading..." : `${todayBookmarkedTotal} bookmarked today`}
+            label={
+              loading
+                ? "Loading..."
+                : `${todayBookmarkedTotal} bookmarked today`
+            }
             sx={{ borderRadius: 2 }}
           />
         </Box>
@@ -460,6 +514,14 @@ export default function DashboardPage() {
           />
         )}
       </Paper>
+
+      <Box mt={3}>
+        <NewPropertiesChart
+          data={newPropertySeries}
+          loading={chartLoading}
+          error={chartError}
+        />
+      </Box>
     </Box>
   );
 }
