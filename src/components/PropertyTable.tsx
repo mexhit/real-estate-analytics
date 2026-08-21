@@ -197,7 +197,7 @@ export function PropertyTable({
           </TableRow>
         </TableHead>
         <TableBody>
-          {properties.map((property) => {
+          {properties.map((property, index) => {
             const priceChange = getPriceChangeInfo(
               property.firstPrice,
               property.lastPrice,
@@ -211,10 +211,14 @@ export function PropertyTable({
               <TableRow
                 key={property.id}
                 hover
-                sx={{
+                sx={(theme) => ({
                   transition: "0.2s",
-                  backgroundColor: !property.seen ? "#f0f9ff" : "inherit",
-                }}
+                  backgroundColor: !property.seen
+                    ? "#f0f9ff"
+                    : index % 2 === 0
+                      ? theme.palette.background.paper
+                      : theme.palette.action.hover,
+                })}
               >
                 <TableCell align="center">
                   <Box
