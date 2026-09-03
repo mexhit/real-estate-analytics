@@ -244,6 +244,9 @@ export default function PropertiesPage() {
           <Button component={Link} href="/" variant="outlined">
             Dashboard
           </Button>
+          <Button component={Link} href="/areas" variant="outlined">
+            Areas
+          </Button>
           <LogoutButton />
         </Box>
       </Box>

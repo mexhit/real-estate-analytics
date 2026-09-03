@@ -227,6 +227,9 @@ export default function DashboardPage() {
           <Button component={Link} href="/properties" variant="outlined">
             Properties
           </Button>
+          <Button component={Link} href="/areas" variant="outlined">
+            Areas
+          </Button>
           <LogoutButton />
         </Box>
       </Box>
