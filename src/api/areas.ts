@@ -14,6 +14,12 @@ class AreasApi {
       .get("/areas")
       .then((response: { data: Area[] }) => response.data);
   }
+
+  createArea(name: string): Promise<Area> {
+    return apiClient
+      .post("/areas", { name })
+      .then((response: { data: Area }) => response.data);
+  }
 }
 
 export const areasApi = new AreasApi();
