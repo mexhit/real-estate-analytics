@@ -32,6 +32,7 @@ export interface PropertyTableItem {
   description: string;
   aiResponseError?: string | null;
   propertyType?: import("@/api/properties").PropertyType | null;
+  areaName?: string | null;
   price: number;
   priceAmount?: number | null;
   squareMeters?: number | null;
@@ -184,6 +185,7 @@ export function PropertyTable({
             <TableCell sx={{ fontWeight: 600 }}>Title</TableCell>
             <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
             <TableCell sx={{ fontWeight: 600, width: 140 }}>Type</TableCell>
+            <TableCell sx={{ fontWeight: 600, width: 140 }}>Area</TableCell>
             <TableCell sx={{ fontWeight: 600, width: 140 }}>Price (€)</TableCell>
             <TableCell sx={{ fontWeight: 600, width: 140 }}>
               Price Changed
@@ -308,6 +310,12 @@ export function PropertyTable({
                       {property.squareMeters} m²
                     </Typography>
                   )}
+                </TableCell>
+
+                <TableCell sx={{ color: "text.secondary" }}>
+                  <Typography variant="body2">
+                    {property.areaName || "—"}
+                  </Typography>
                 </TableCell>
 
                 <TableCell sx={{ fontWeight: 600 }}>

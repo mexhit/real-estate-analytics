@@ -21,12 +21,14 @@ import {
 } from "@mui/material";
 import { useSearchParams, useRouter } from "next/navigation";
 import { PROPERTY_TYPES, propertiesApi, type PropertyType } from "@/api/properties";
+import { areasApi, type Area } from "@/api/areas";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs, { Dayjs } from "dayjs";
 import { LogoutButton } from "@/app/LogoutButton";
 import { PropertyTable, type PropertyTableItem } from "@/components/PropertyTable";
 
 const PROPERTY_TYPES_STORAGE_KEY = "propertyTypes";
+const AREA_IDS_STORAGE_KEY = "areaIds";
 
 export default function PropertiesPage() {
   const router = useRouter();
@@ -44,6 +46,8 @@ export default function PropertiesPage() {
   const [page, setPage] = React.useState(initialPage);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [propertyTypes, setPropertyTypes] = React.useState<PropertyType[]>([]);
+  const [areas, setAreas] = React.useState<Area[]>([]);
+  const [areaIds, setAreaIds] = React.useState<number[]>([]);
   const [onlyUnseen, setOnlyUnseen] = React.useState(false);
   const [onlyBookmarked, setOnlyBookmarked] = React.useState(false);
   const [onlyPriceChanged, setOnlyPriceChanged] = React.useState(false);
@@ -86,10 +90,15 @@ export default function PropertiesPage() {
   };
 
   React.useEffect(() => {
+    areasApi.getAreas().then(setAreas).catch(() => setAreas([]));
+  }, []);
+
+  React.useEffect(() => {
     const storedFromDate = localStorage.getItem("fromDate");
     const storedToDate = localStorage.getItem("toDate");
     const storedRowsPerPage = localStorage.getItem("rowsPerPage");
     const storedPropertyTypes = localStorage.getItem(PROPERTY_TYPES_STORAGE_KEY);
+    const storedAreaIds = localStorage.getItem(AREA_IDS_STORAGE_KEY);
 
     setFromDate(storedFromDate ? dayjs(storedFromDate) : null);
     setToDate(storedToDate ? dayjs(storedToDate) : null);
@@ -109,6 +118,21 @@ export default function PropertiesPage() {
         localStorage.removeItem(PROPERTY_TYPES_STORAGE_KEY);
       }
     }
+    if (storedAreaIds) {
+      try {
+        const parsed = JSON.parse(storedAreaIds);
+
+        if (Array.isArray(parsed)) {
+          setAreaIds(
+            parsed.filter(
+              (value): value is number => typeof value === "number",
+            ),
+          );
+        }
+      } catch {
+        localStorage.removeItem(AREA_IDS_STORAGE_KEY);
+      }
+    }
     setPreferencesLoaded(true);
   }, []);
 
@@ -126,6 +150,7 @@ export default function PropertiesPage() {
           fromDate: fromDate ? fromDate.startOf("day").valueOf() : undefined,
           toDate: toDate ? toDate.endOf("day").valueOf() : undefined,
           propertyTypes: propertyTypes.length > 0 ? propertyTypes : undefined,
+          areaIds: areaIds.length > 0 ? areaIds : undefined,
           onlyUnseen,
           onlyBookmarked,
           onlyPriceChanged,
@@ -148,6 +173,7 @@ export default function PropertiesPage() {
     fromDate,
     toDate,
     propertyTypes,
+    areaIds,
     onlyUnseen,
     onlyBookmarked,
     onlyPriceChanged,
@@ -191,6 +217,14 @@ export default function PropertiesPage() {
       JSON.stringify(propertyTypes),
     );
   }, [preferencesLoaded, propertyTypes]);
+
+  React.useEffect(() => {
+    if (!preferencesLoaded) {
+      return;
+    }
+
+    localStorage.setItem(AREA_IDS_STORAGE_KEY, JSON.stringify(areaIds));
+  }, [preferencesLoaded, areaIds]);
 
   const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
@@ -318,7 +352,44 @@ export default function PropertiesPage() {
           </Select>
         </FormControl>
 
-        {(fromDate || toDate || propertyTypes.length > 0) && (
+        <FormControl size="small" sx={{ minWidth: 200 }}>
+          <InputLabel id="areas-label">Area</InputLabel>
+          <Select
+            labelId="areas-label"
+            multiple
+            value={areaIds}
+            onChange={(event) => {
+              const value = event.target.value;
+              setAreaIds(
+                typeof value === "string"
+                  ? value.split(",").map(Number)
+                  : value,
+              );
+              setPage(0);
+              updateUrl(0);
+            }}
+            input={<OutlinedInput label="Area" />}
+            renderValue={(selected) => (
+              <Box display="flex" gap={0.5} flexWrap="wrap">
+                {selected.map((id) => (
+                  <Chip
+                    key={id}
+                    label={areas.find((area) => area.id === id)?.name ?? id}
+                    size="small"
+                  />
+                ))}
+              </Box>
+            )}
+          >
+            {areas.map((area) => (
+              <MenuItem key={area.id} value={area.id}>
+                {area.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        {(fromDate || toDate || propertyTypes.length > 0 || areaIds.length > 0) && (
           <Button
             size="small"
             variant="outlined"
@@ -326,6 +397,7 @@ export default function PropertiesPage() {
               setFromDate(null);
               setToDate(null);
               setPropertyTypes([]);
+              setAreaIds([]);
               setPage(0);
               updateUrl(0);
             }}

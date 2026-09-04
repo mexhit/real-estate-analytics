@@ -22,6 +22,7 @@ export interface Property {
   description: string;
   aiResponseError?: string | null;
   propertyType?: PropertyType | null;
+  areaName?: string | null;
   price: number;
   priceAmount?: number | null;
   squareMeters?: number | null;
@@ -52,6 +53,7 @@ export interface GetPaginatedPropertiesParams {
   fromDate?: number;
   toDate?: number;
   propertyTypes?: PropertyType[];
+  areaIds?: number[];
   onlyUnseen?: boolean;
   onlyBookmarked?: boolean;
   onlyPriceChanged?: boolean;
