@@ -230,6 +230,9 @@ export default function DashboardPage() {
           <Button component={Link} href="/areas" variant="outlined">
             Areas
           </Button>
+          <Button component={Link} href="/settings" variant="outlined">
+            Settings
+          </Button>
           <LogoutButton />
         </Box>
       </Box>

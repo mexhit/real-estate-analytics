@@ -116,6 +116,9 @@ export default function AreasPage() {
           <Button component={Link} href="/properties" variant="outlined">
             Properties
           </Button>
+          <Button component={Link} href="/settings" variant="outlined">
+            Settings
+          </Button>
           <LogoutButton />
         </Box>
       </Box>
