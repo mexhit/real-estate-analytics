@@ -1,6 +1,6 @@
 import { apiClient } from "@/api/client";
 
-export const AI_PROVIDERS = ["GEMINI", "GROQ"] as const;
+export const AI_PROVIDERS = ["GEMINI", "GEMINI_2", "GROQ"] as const;
 
 export type AiProviderType = (typeof AI_PROVIDERS)[number];
 
