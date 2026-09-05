@@ -20,6 +20,18 @@ class AreasApi {
       .post("/areas", { name })
       .then((response: { data: Area }) => response.data);
   }
+
+  updateArea(id: number, name: string): Promise<Area> {
+    return apiClient
+      .put(`/areas/${id}`, { name })
+      .then((response: { data: Area }) => response.data);
+  }
+
+  deleteArea(id: number, reassignToAreaId: number): Promise<void> {
+    return apiClient
+      .delete(`/areas/${id}`, { data: { reassignToAreaId } })
+      .then(() => undefined);
+  }
 }
 
 export const areasApi = new AreasApi();

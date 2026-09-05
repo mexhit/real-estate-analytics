@@ -11,7 +11,12 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControl,
+  IconButton,
+  InputLabel,
+  MenuItem,
   Paper,
+  Select,
   Table,
   TableBody,
   TableCell,
@@ -22,6 +27,8 @@ import {
   Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 import dayjs from "dayjs";
 import { isAxiosError } from "axios";
 import { areasApi, type Area } from "@/api/areas";
@@ -44,6 +51,18 @@ export default function AreasPage() {
   const [newAreaName, setNewAreaName] = React.useState("");
   const [creating, setCreating] = React.useState(false);
   const [createError, setCreateError] = React.useState<string | null>(null);
+
+  const [editingArea, setEditingArea] = React.useState<Area | null>(null);
+  const [editName, setEditName] = React.useState("");
+  const [editing, setEditing] = React.useState(false);
+  const [editError, setEditError] = React.useState<string | null>(null);
+
+  const [deletingArea, setDeletingArea] = React.useState<Area | null>(null);
+  const [reassignToAreaId, setReassignToAreaId] = React.useState<
+    number | ""
+  >("");
+  const [deleting, setDeleting] = React.useState(false);
+  const [deleteError, setDeleteError] = React.useState<string | null>(null);
 
   const fetchAreas = React.useCallback(async () => {
     try {
@@ -88,6 +107,74 @@ export default function AreasPage() {
       setCreating(false);
     }
   };
+
+  const openEditDialog = (area: Area) => {
+    setEditingArea(area);
+    setEditName(area.name);
+    setEditError(null);
+  };
+
+  const closeEditDialog = () => {
+    if (editing) {
+      return;
+    }
+    setEditingArea(null);
+  };
+
+  const handleEditArea = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editingArea) {
+      return;
+    }
+    setEditError(null);
+    setEditing(true);
+
+    try {
+      await areasApi.updateArea(editingArea.id, editName);
+      setEditingArea(null);
+      await fetchAreas();
+    } catch (err) {
+      setEditError(extractErrorMessage(err, "Failed to update area"));
+    } finally {
+      setEditing(false);
+    }
+  };
+
+  const openDeleteDialog = (area: Area) => {
+    setDeletingArea(area);
+    setReassignToAreaId("");
+    setDeleteError(null);
+  };
+
+  const closeDeleteDialog = () => {
+    if (deleting) {
+      return;
+    }
+    setDeletingArea(null);
+  };
+
+  const handleDeleteArea = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!deletingArea || reassignToAreaId === "") {
+      return;
+    }
+    setDeleteError(null);
+    setDeleting(true);
+
+    try {
+      await areasApi.deleteArea(deletingArea.id, reassignToAreaId);
+      setDeletingArea(null);
+      await fetchAreas();
+    } catch (err) {
+      setDeleteError(extractErrorMessage(err, "Failed to delete area"));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const reassignOptions = deletingArea
+    ? areas.filter((area) => area.id !== deletingArea.id)
+    : [];
 
   if (error) {
     return (
@@ -159,6 +246,9 @@ export default function AreasPage() {
                   <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Key</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Created</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }} align="right">
+                    Actions
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -168,6 +258,22 @@ export default function AreasPage() {
                     <TableCell>{area.key}</TableCell>
                     <TableCell>
                       {dayjs(area.createdAt).format("DD MMM YYYY")}
+                    </TableCell>
+                    <TableCell align="right">
+                      <IconButton
+                        aria-label={`Edit area ${area.name}`}
+                        size="small"
+                        onClick={() => openEditDialog(area)}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        aria-label={`Delete area ${area.name}`}
+                        size="small"
+                        onClick={() => openDeleteDialog(area)}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -203,6 +309,102 @@ export default function AreasPage() {
               disabled={creating || !newAreaName.trim()}
             >
               {creating ? "Adding..." : "Add"}
+            </Button>
+          </DialogActions>
+        </Box>
+      </Dialog>
+
+      <Dialog
+        open={editingArea !== null}
+        onClose={closeEditDialog}
+        fullWidth
+        maxWidth="xs"
+      >
+        <Box component="form" onSubmit={handleEditArea}>
+          <DialogTitle>Edit Area</DialogTitle>
+          <DialogContent>
+            <Box display="flex" flexDirection="column" gap={2} pt={1}>
+              {editError && <Alert severity="error">{editError}</Alert>}
+              <TextField
+                label="Name"
+                value={editName}
+                onChange={(event) => setEditName(event.target.value)}
+                required
+                fullWidth
+                autoFocus
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={closeEditDialog} disabled={editing}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={editing || !editName.trim()}
+            >
+              {editing ? "Saving..." : "Save"}
+            </Button>
+          </DialogActions>
+        </Box>
+      </Dialog>
+
+      <Dialog
+        open={deletingArea !== null}
+        onClose={closeDeleteDialog}
+        fullWidth
+        maxWidth="xs"
+      >
+        <Box component="form" onSubmit={handleDeleteArea}>
+          <DialogTitle>Delete Area</DialogTitle>
+          <DialogContent>
+            <Box display="flex" flexDirection="column" gap={2} pt={1}>
+              {deleteError && <Alert severity="error">{deleteError}</Alert>}
+              <Typography>
+                Are you sure you want to delete &ldquo;{deletingArea?.name}
+                &rdquo;? Any properties assigned to it will be moved to the
+                area you choose below.
+              </Typography>
+              {reassignOptions.length === 0 ? (
+                <Alert severity="warning">
+                  There&apos;s no other area to reassign properties to.
+                  Create another area first.
+                </Alert>
+              ) : (
+                <FormControl fullWidth required>
+                  <InputLabel id="reassign-to-area-label">
+                    Reassign properties to
+                  </InputLabel>
+                  <Select
+                    labelId="reassign-to-area-label"
+                    label="Reassign properties to"
+                    value={reassignToAreaId}
+                    onChange={(event) =>
+                      setReassignToAreaId(event.target.value as number)
+                    }
+                  >
+                    {reassignOptions.map((area) => (
+                      <MenuItem key={area.id} value={area.id}>
+                        {area.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={closeDeleteDialog} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              color="error"
+              variant="contained"
+              disabled={deleting || reassignToAreaId === ""}
+            >
+              {deleting ? "Deleting..." : "Delete"}
             </Button>
           </DialogActions>
         </Box>
