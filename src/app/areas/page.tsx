@@ -32,6 +32,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import dayjs from "dayjs";
 import { isAxiosError } from "axios";
 import { areasApi, type Area } from "@/api/areas";
+import { jobsApi, type AreaPriceSnapshotJobResult } from "@/api/jobs";
 import { LogoutButton } from "@/app/LogoutButton";
 
 function extractErrorMessage(err: unknown, fallback: string): string {
@@ -63,6 +64,13 @@ export default function AreasPage() {
   >("");
   const [deleting, setDeleting] = React.useState(false);
   const [deleteError, setDeleteError] = React.useState<string | null>(null);
+
+  const [runningSnapshotJob, setRunningSnapshotJob] = React.useState(false);
+  const [snapshotJobResult, setSnapshotJobResult] =
+    React.useState<AreaPriceSnapshotJobResult | null>(null);
+  const [snapshotJobError, setSnapshotJobError] = React.useState<
+    string | null
+  >(null);
 
   const fetchAreas = React.useCallback(async () => {
     try {
@@ -172,6 +180,21 @@ export default function AreasPage() {
     }
   };
 
+  const handleRunSnapshotJob = async () => {
+    setSnapshotJobError(null);
+    setRunningSnapshotJob(true);
+
+    try {
+      setSnapshotJobResult(await jobsApi.runAreaPriceSnapshot());
+    } catch (err) {
+      setSnapshotJobError(
+        extractErrorMessage(err, "Failed to run price snapshot job"),
+      );
+    } finally {
+      setRunningSnapshotJob(false);
+    }
+  };
+
   const reassignOptions = deletingArea
     ? areas.filter((area) => area.id !== deletingArea.id)
     : [];
@@ -274,6 +297,87 @@ export default function AreasPage() {
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </Paper>
+
+      <Paper
+        elevation={1}
+        sx={{
+          borderRadius: 2,
+          border: "1px solid",
+          borderColor: "divider",
+          backgroundColor: "#fff",
+          mt: 3,
+          p: 2,
+        }}
+      >
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          gap={2}
+        >
+          <Typography variant="subtitle1" fontWeight={600}>
+            Area Price Snapshot Job
+          </Typography>
+          <Button
+            variant="outlined"
+            onClick={handleRunSnapshotJob}
+            disabled={runningSnapshotJob}
+          >
+            {runningSnapshotJob ? "Running..." : "Run now"}
+          </Button>
+        </Box>
+
+        {snapshotJobError && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {snapshotJobError}
+          </Alert>
+        )}
+
+        {snapshotJobResult && snapshotJobResult.status === "skipped" && (
+          <Alert severity="warning" sx={{ mt: 2 }}>
+            Skipped: {snapshotJobResult.reason}
+          </Alert>
+        )}
+
+        {snapshotJobResult && snapshotJobResult.status === "completed" && (
+          <TableContainer sx={{ mt: 2 }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 600 }}>Area</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }} align="right">
+                    Properties
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600 }} align="right">
+                    Excluded
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Error</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {snapshotJobResult.areas.map((areaResult) => (
+                  <TableRow key={areaResult.areaId} hover>
+                    <TableCell>{areaResult.areaName}</TableCell>
+                    <TableCell align="right">
+                      {areaResult.propertyCount ?? "—"}
+                    </TableCell>
+                    <TableCell align="right">
+                      {areaResult.excludedCount ?? "—"}
+                    </TableCell>
+                    <TableCell>
+                      {areaResult.error && (
+                        <Typography color="error" variant="body2">
+                          {areaResult.error}
+                        </Typography>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
