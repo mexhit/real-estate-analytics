@@ -43,6 +43,18 @@ function extractErrorMessage(err: unknown, fallback: string): string {
   return err instanceof Error ? err.message : fallback;
 }
 
+function formatAvgPricePerSqm(area: Area): string {
+  if (area.avgPricePerSqm == null || area.avgPriceCurrency == null) {
+    return "No data";
+  }
+
+  const formatted = new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 0,
+  }).format(area.avgPricePerSqm);
+
+  return `${formatted} ${area.avgPriceCurrency}/m²`;
+}
+
 export default function AreasPage() {
   const [areas, setAreas] = React.useState<Area[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -270,6 +282,13 @@ export default function AreasPage() {
                   <TableCell sx={{ fontWeight: 600 }}>Key</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Created</TableCell>
                   <TableCell sx={{ fontWeight: 600 }} align="right">
+                    Avg price/m²
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600 }} align="right">
+                    Properties counted
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Last updated</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }} align="right">
                     Actions
                   </TableCell>
                 </TableRow>
@@ -281,6 +300,17 @@ export default function AreasPage() {
                     <TableCell>{area.key}</TableCell>
                     <TableCell>
                       {dayjs(area.createdAt).format("DD MMM YYYY")}
+                    </TableCell>
+                    <TableCell align="right">
+                      {formatAvgPricePerSqm(area)}
+                    </TableCell>
+                    <TableCell align="right">
+                      {area.snapshotPropertyCount ?? "No data"}
+                    </TableCell>
+                    <TableCell>
+                      {area.snapshotAt
+                        ? dayjs(area.snapshotAt).format("DD MMM YYYY HH:mm")
+                        : "No data"}
                     </TableCell>
                     <TableCell align="right">
                       <IconButton

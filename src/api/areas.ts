@@ -6,6 +6,10 @@ export interface Area {
   key: string;
   createdAt: string;
   updatedAt: string;
+  avgPricePerSqm: number | null;
+  avgPriceCurrency: string | null;
+  snapshotPropertyCount: number | null;
+  snapshotAt: string | null;
 }
 
 class AreasApi {
