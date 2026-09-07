@@ -18,6 +18,7 @@ import {
   Typography,
 } from "@mui/material";
 import {
+  AutoFixHigh,
   ErrorOutline,
   NewReleases,
   Star,
@@ -236,32 +237,39 @@ export function PropertyTable({
                         <NewReleases fontSize="small" sx={{ color: "#0288d1" }} />
                       </Tooltip>
                     )}
-                    {property.aiResponseError && (
-                      <Tooltip
-                        title={`AI extraction error: ${property.aiResponseError}. Click to retry.`}
-                        arrow
-                      >
-                        <span>
-                          <IconButton
-                            aria-label={`Retry AI extraction for property ${property.id}`}
-                            color="error"
-                            disabled={
-                              !onRetryAiMetadata ||
-                              retryingAiMetadataIds.has(property.id)
-                            }
-                            onClick={() => handleRetryAiMetadata(property.id)}
-                            size="small"
-                            sx={{ p: 0.25 }}
-                          >
-                            {retryingAiMetadataIds.has(property.id) ? (
-                              <CircularProgress color="error" size={18} />
-                            ) : (
-                              <ErrorOutline fontSize="small" />
-                            )}
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-                    )}
+                    <Tooltip
+                      title={
+                        property.aiResponseError
+                          ? `AI extraction error: ${property.aiResponseError}. Click to retry.`
+                          : "Extract AI metadata"
+                      }
+                      arrow
+                    >
+                      <span>
+                        <IconButton
+                          aria-label={`Extract AI metadata for property ${property.id}`}
+                          color={property.aiResponseError ? "error" : "default"}
+                          disabled={
+                            !onRetryAiMetadata ||
+                            retryingAiMetadataIds.has(property.id)
+                          }
+                          onClick={() => handleRetryAiMetadata(property.id)}
+                          size="small"
+                          sx={{ p: 0.25 }}
+                        >
+                          {retryingAiMetadataIds.has(property.id) ? (
+                            <CircularProgress
+                              color={property.aiResponseError ? "error" : "inherit"}
+                              size={18}
+                            />
+                          ) : property.aiResponseError ? (
+                            <ErrorOutline fontSize="small" />
+                          ) : (
+                            <AutoFixHigh fontSize="small" />
+                          )}
+                        </IconButton>
+                      </span>
+                    </Tooltip>
                   </Box>
                 </TableCell>
 
