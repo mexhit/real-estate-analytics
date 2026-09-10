@@ -15,6 +15,8 @@ export const PROPERTY_TYPES = [
 
 export type PropertyType = (typeof PROPERTY_TYPES)[number];
 
+export type PricePosition = "above" | "below" | "in_line";
+
 export interface Property {
   id: number;
   providerId: string;
@@ -26,6 +28,11 @@ export interface Property {
   price: number;
   priceAmount?: number | null;
   squareMeters?: number | null;
+  areaAvgPricePerSqm?: number | null;
+  areaAvgPriceCurrency?: string | null;
+  areaSnapshotPropertyCount?: number | null;
+  pricePosition?: PricePosition | null;
+  pricePositionPercentage?: number | null;
   url: string;
   createdAt: number;
   seen: boolean;

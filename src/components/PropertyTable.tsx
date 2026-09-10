@@ -37,6 +37,11 @@ export interface PropertyTableItem {
   price: number;
   priceAmount?: number | null;
   squareMeters?: number | null;
+  areaAvgPricePerSqm?: number | null;
+  areaAvgPriceCurrency?: string | null;
+  areaSnapshotPropertyCount?: number | null;
+  pricePosition?: import("@/api/properties").PricePosition | null;
+  pricePositionPercentage?: number | null;
   providerPropertyCount: string;
   url: string;
   seen: boolean;
@@ -117,6 +122,35 @@ function formatPeriod(from: string | Date, to: string | Date) {
 
   const months = Math.floor(days / 30);
   return `${months} month${months !== 1 ? "s" : ""}`;
+}
+
+function getPricePositionInfo(
+  pricePosition: import("@/api/properties").PricePosition | null | undefined,
+  pricePositionPercentage: number | null | undefined,
+): { label: string; color: "error" | "success" | "default"; variant: "filled" | "outlined" } | null {
+  if (!pricePosition) return null;
+
+  if (pricePosition === "above") {
+    return {
+      label: `+${pricePositionPercentage}% vs area`,
+      color: "error",
+      variant: "filled",
+    };
+  }
+
+  if (pricePosition === "below") {
+    return {
+      label: `${pricePositionPercentage}% vs area`,
+      color: "success",
+      variant: "filled",
+    };
+  }
+
+  return {
+    label: "In line with area",
+    color: "default",
+    variant: "outlined",
+  };
 }
 
 function getPriceChangeInfo(firstPrice: string, lastPrice: string) {
@@ -208,6 +242,10 @@ export function PropertyTable({
             const pricePerSquareMeter = getPricePerSquareMeter(
               property.priceAmount,
               property.squareMeters,
+            );
+            const pricePositionInfo = getPricePositionInfo(
+              property.pricePosition,
+              property.pricePositionPercentage,
             );
 
             return (
@@ -334,6 +372,32 @@ export function PropertyTable({
                     <Typography variant="caption" color="text.secondary">
                       {formatPrice(pricePerSquareMeter)}/m2
                     </Typography>
+                  )}
+                  {pricePositionInfo && (
+                    <Box sx={{ mt: 0.5 }}>
+                      <Tooltip
+                        title={
+                          pricePerSquareMeter != null &&
+                          property.areaAvgPricePerSqm != null
+                            ? `${formatPrice(pricePerSquareMeter)}/m² vs ${
+                                property.areaName || "area"
+                              } average ${formatPrice(
+                                property.areaAvgPricePerSqm,
+                              )}/m² · based on ${
+                                property.areaSnapshotPropertyCount
+                              } listings`
+                            : ""
+                        }
+                        arrow
+                      >
+                        <Chip
+                          label={pricePositionInfo.label}
+                          size="small"
+                          color={pricePositionInfo.color}
+                          variant={pricePositionInfo.variant}
+                        />
+                      </Tooltip>
+                    </Box>
                   )}
                 </TableCell>
 
