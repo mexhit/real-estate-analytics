@@ -29,7 +29,7 @@ interface Property {
   priceAmount?: number | null;
   squareMeters?: number | null;
   url: string;
-  createdAt: number;
+  createdAt: number | string;
 }
 
 export default function ProviderPropertiesPage() {
@@ -81,7 +81,7 @@ export default function ProviderPropertiesPage() {
     setPage(0);
   };
 
-  const formatDate = (date: number) =>
+  const formatDate = (date: number | string) =>
     new Intl.DateTimeFormat("en-GB", {
       day: "2-digit",
       month: "short",

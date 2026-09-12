@@ -33,6 +33,7 @@ export interface PropertyTableItem {
   description: string;
   aiResponseError?: string | null;
   propertyType?: import("@/api/properties").PropertyType | null;
+  areaId?: number | null;
   areaName?: string | null;
   price: number;
   priceAmount?: number | null;
@@ -42,15 +43,15 @@ export interface PropertyTableItem {
   areaSnapshotPropertyCount?: number | null;
   pricePosition?: import("@/api/properties").PricePosition | null;
   pricePositionPercentage?: number | null;
-  providerPropertyCount: string;
+  providerPropertyCount?: string;
   url: string;
   seen: boolean;
-  createdAt: number;
+  createdAt: number | string;
   bookmarked: boolean;
-  firstPostedAt: string;
-  lastPostedAt: string;
-  firstPrice: string;
-  lastPrice: string;
+  firstPostedAt?: string;
+  lastPostedAt?: string;
+  firstPrice?: string;
+  lastPrice?: string;
 }
 
 interface PropertyTableProps {
@@ -58,14 +59,23 @@ interface PropertyTableProps {
   onBookmark: (propertyId: number) => void | Promise<void>;
   onRetryAiMetadata?: (propertyId: number) => void | Promise<void>;
   stickyHeader?: boolean;
+  showPricePosition?: boolean;
+  showProviderHistory?: boolean;
+  highlightProviderId?: string | null;
 }
 
-function formatDate(date: number | string) {
+function formatDate(date: number | string | null | undefined): string {
+  if (date == null) return "-";
+
+  const parsed = new Date(date);
+
+  if (isNaN(parsed.getTime())) return "-";
+
   return new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  }).format(new Date(date));
+  }).format(parsed);
 }
 
 function formatPrice(value: number | null | undefined): string {
@@ -105,9 +115,14 @@ function parsePriceToNumber(price: string | null | undefined): number | null {
   return Number(numeric);
 }
 
-function formatPeriod(from: string | Date, to: string | Date) {
+function formatPeriod(
+  from: string | Date | null | undefined,
+  to: string | Date | null | undefined,
+): string {
   const start = dayjs(from);
   const end = dayjs(to);
+
+  if (!start.isValid() || !end.isValid()) return "-";
 
   const days = end.diff(start, "day");
 
@@ -153,7 +168,10 @@ function getPricePositionInfo(
   };
 }
 
-function getPriceChangeInfo(firstPrice: string, lastPrice: string) {
+function getPriceChangeInfo(
+  firstPrice: string | null | undefined,
+  lastPrice: string | null | undefined,
+) {
   const firstPriceNum = parsePriceToNumber(firstPrice);
   const lastPriceNum = parsePriceToNumber(lastPrice);
 
@@ -184,6 +202,9 @@ export function PropertyTable({
   onBookmark,
   onRetryAiMetadata,
   stickyHeader = true,
+  showPricePosition = true,
+  showProviderHistory = true,
+  highlightProviderId = null,
 }: PropertyTableProps) {
   const [retryingAiMetadataIds, setRetryingAiMetadataIds] = React.useState<
     Set<number>
@@ -222,14 +243,20 @@ export function PropertyTable({
             <TableCell sx={{ fontWeight: 600, width: 140 }}>Type</TableCell>
             <TableCell sx={{ fontWeight: 600, width: 140 }}>Area</TableCell>
             <TableCell sx={{ fontWeight: 600, width: 140 }}>Price (€)</TableCell>
-            <TableCell sx={{ fontWeight: 600, width: 140 }}>
-              Price Changed
-            </TableCell>
+            {showProviderHistory && (
+              <TableCell sx={{ fontWeight: 600, width: 140 }}>
+                Price Changed
+              </TableCell>
+            )}
             <TableCell sx={{ fontWeight: 600, width: 140 }}>Posted</TableCell>
-            <TableCell sx={{ fontWeight: 600, width: 140 }}>
-              Active For
-            </TableCell>
-            <TableCell sx={{ fontWeight: 600, width: 50 }}>Repost</TableCell>
+            {showProviderHistory && (
+              <TableCell sx={{ fontWeight: 600, width: 140 }}>
+                Active For
+              </TableCell>
+            )}
+            {showProviderHistory && (
+              <TableCell sx={{ fontWeight: 600, width: 50 }}>Repost</TableCell>
+            )}
             <TableCell sx={{ fontWeight: 600, width: 130 }}>URL</TableCell>
           </TableRow>
         </TableHead>
@@ -254,11 +281,15 @@ export function PropertyTable({
                 hover
                 sx={(theme) => ({
                   transition: "0.2s",
-                  backgroundColor: !property.seen
-                    ? "#f0f9ff"
-                    : index % 2 === 0
-                      ? theme.palette.background.paper
-                      : theme.palette.action.hover,
+                  backgroundColor:
+                    highlightProviderId != null &&
+                    property.providerId === highlightProviderId
+                      ? "#fff3cd"
+                      : !property.seen
+                        ? "#f0f9ff"
+                        : index % 2 === 0
+                          ? theme.palette.background.paper
+                          : theme.palette.action.hover,
                 })}
               >
                 <TableCell align="center">
@@ -373,7 +404,7 @@ export function PropertyTable({
                       {formatPrice(pricePerSquareMeter)}/m2
                     </Typography>
                   )}
-                  {pricePositionInfo && (
+                  {showPricePosition && pricePositionInfo && (
                     <Box sx={{ mt: 0.5 }}>
                       <Tooltip
                         title={
@@ -385,78 +416,93 @@ export function PropertyTable({
                                 property.areaAvgPricePerSqm,
                               )}/m² · based on ${
                                 property.areaSnapshotPropertyCount
-                              } listings`
+                              } listings · click to see them`
                             : ""
                         }
                         arrow
                       >
-                        <Chip
-                          label={pricePositionInfo.label}
-                          size="small"
-                          color={pricePositionInfo.color}
-                          variant={pricePositionInfo.variant}
-                        />
+                        <Link
+                          href={`/areas/${property.areaId}/contributing-listings?highlightProviderId=${encodeURIComponent(
+                            property.providerId,
+                          )}`}
+                          style={{ textDecoration: "none" }}
+                          target="_blank"
+                        >
+                          <Chip
+                            label={pricePositionInfo.label}
+                            size="small"
+                            color={pricePositionInfo.color}
+                            variant={pricePositionInfo.variant}
+                            sx={{ cursor: "pointer" }}
+                          />
+                        </Link>
                       </Tooltip>
                     </Box>
                   )}
                 </TableCell>
 
-                <TableCell>
-                  {priceChange.type === "increased" && (
-                    <Chip
-                      label={priceChange.diffLabel}
-                      size="small"
-                      color="error"
-                      variant="filled"
-                    />
-                  )}
+                {showProviderHistory && (
+                  <TableCell>
+                    {priceChange.type === "increased" && (
+                      <Chip
+                        label={priceChange.diffLabel}
+                        size="small"
+                        color="error"
+                        variant="filled"
+                      />
+                    )}
 
-                  {priceChange.type === "decreased" && (
-                    <Chip
-                      label={priceChange.diffLabel}
-                      size="small"
-                      color="success"
-                      variant="filled"
-                    />
-                  )}
+                    {priceChange.type === "decreased" && (
+                      <Chip
+                        label={priceChange.diffLabel}
+                        size="small"
+                        color="success"
+                        variant="filled"
+                      />
+                    )}
 
-                  {priceChange.type === "unchanged" && (
-                    <Chip label={priceChange.diffLabel} size="small" variant="outlined" />
-                  )}
-                </TableCell>
+                    {priceChange.type === "unchanged" && (
+                      <Chip label={priceChange.diffLabel} size="small" variant="outlined" />
+                    )}
+                  </TableCell>
+                )}
 
                 <TableCell sx={{ width: 140, color: "text.secondary" }}>
                   {formatDate(property.createdAt)}
                 </TableCell>
 
-                <TableCell sx={{ color: "text.secondary" }}>
-                  <Tooltip
-                    title={`From ${formatDate(property.firstPostedAt)} to ${formatDate(
-                      property.lastPostedAt,
-                    )}`}
-                    arrow
-                  >
-                    <Typography variant="body2" color="text.secondary">
-                      {formatPeriod(property.firstPostedAt, property.lastPostedAt)}
-                    </Typography>
-                  </Tooltip>
-                </TableCell>
+                {showProviderHistory && (
+                  <TableCell sx={{ color: "text.secondary" }}>
+                    <Tooltip
+                      title={`From ${formatDate(property.firstPostedAt)} to ${formatDate(
+                        property.lastPostedAt,
+                      )}`}
+                      arrow
+                    >
+                      <Typography variant="body2" color="text.secondary">
+                        {formatPeriod(property.firstPostedAt, property.lastPostedAt)}
+                      </Typography>
+                    </Tooltip>
+                  </TableCell>
+                )}
 
-                <TableCell>
-                  <Link
-                    href={`/providers/${property.providerId}`}
-                    style={{ textDecoration: "none" }}
-                    target="_blank"
-                  >
-                    <Chip
-                      label={property.providerPropertyCount}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                      sx={{ cursor: "pointer" }}
-                    />
-                  </Link>
-                </TableCell>
+                {showProviderHistory && (
+                  <TableCell>
+                    <Link
+                      href={`/providers/${property.providerId}`}
+                      style={{ textDecoration: "none" }}
+                      target="_blank"
+                    >
+                      <Chip
+                        label={property.providerPropertyCount}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                        sx={{ cursor: "pointer" }}
+                      />
+                    </Link>
+                  </TableCell>
+                )}
 
                 <TableCell>
                   <Button

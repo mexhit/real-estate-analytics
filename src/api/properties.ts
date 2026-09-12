@@ -24,6 +24,7 @@ export interface Property {
   description: string;
   aiResponseError?: string | null;
   propertyType?: PropertyType | null;
+  areaId?: number | null;
   areaName?: string | null;
   price: number;
   priceAmount?: number | null;
@@ -34,14 +35,14 @@ export interface Property {
   pricePosition?: PricePosition | null;
   pricePositionPercentage?: number | null;
   url: string;
-  createdAt: number;
+  createdAt: number | string;
   seen: boolean;
   bookmarked: boolean;
-  providerPropertyCount: string;
-  firstPostedAt: string;
-  lastPostedAt: string;
-  firstPrice: string;
-  lastPrice: string;
+  providerPropertyCount?: string;
+  firstPostedAt?: string;
+  lastPostedAt?: string;
+  firstPrice?: string;
+  lastPrice?: string;
 }
 
 export interface PaginatedResponse<T> {
