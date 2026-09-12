@@ -28,6 +28,7 @@ export interface Property {
   areaName?: string | null;
   price: number;
   priceAmount?: number | null;
+  priceCurrency?: string | null;
   squareMeters?: number | null;
   areaAvgPricePerSqm?: number | null;
   areaAvgPriceCurrency?: string | null;
@@ -82,6 +83,16 @@ export interface ExtractAiMetadataParams {
   propertyId: number;
 }
 
+export interface UpdatePropertyPayload {
+  title?: string;
+  description?: string;
+  priceAmount?: number | null;
+  priceCurrency?: string | null;
+  squareMeters?: number | null;
+  propertyType?: PropertyType | null;
+  areaId?: number | null;
+}
+
 class PropertiesApi {
   getNewPropertiesSeries(): Promise<NewPropertySeriesPoint[]> {
     return apiClient
@@ -116,6 +127,15 @@ class PropertiesApi {
   }: ExtractAiMetadataParams): Promise<Property> {
     return apiClient
       .post("/properties/ai-metadata", { propertyId })
+      .then((response: { data: Property }) => response.data);
+  }
+
+  updateProperty(
+    propertyId: number,
+    updates: UpdatePropertyPayload,
+  ): Promise<Property> {
+    return apiClient
+      .patch(`/properties/${propertyId}`, updates)
       .then((response: { data: Property }) => response.data);
   }
 }

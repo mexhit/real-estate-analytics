@@ -15,9 +15,10 @@ import {
 import dayjs from "dayjs";
 import {
   areasApi,
+  type Area,
   type ContributingListingsSummary,
 } from "@/api/areas";
-import { propertiesApi } from "@/api/properties";
+import { propertiesApi, type UpdatePropertyPayload } from "@/api/properties";
 import { LogoutButton } from "@/app/LogoutButton";
 import { PropertyTable, type PropertyTableItem } from "@/components/PropertyTable";
 
@@ -42,6 +43,7 @@ export default function ContributingListingsPage() {
   const highlightProviderId = searchParams.get("highlightProviderId") ?? undefined;
 
   const [properties, setProperties] = React.useState<PropertyTableItem[]>([]);
+  const [areas, setAreas] = React.useState<Area[]>([]);
   const [summary, setSummary] = React.useState<ContributingListingsSummary | null>(
     null,
   );
@@ -80,6 +82,28 @@ export default function ContributingListingsPage() {
 
     fetchContributingListings();
   }, [areaId, page, rowsPerPage, highlightProviderId]);
+
+  React.useEffect(() => {
+    areasApi.getAreas().then(setAreas).catch(() => setAreas([]));
+  }, []);
+
+  const handleUpdateProperty = async (
+    propertyId: number,
+    updates: UpdatePropertyPayload,
+  ) => {
+    const updatedProperty = await propertiesApi.updateProperty(
+      propertyId,
+      updates,
+    );
+
+    setProperties((prev) =>
+      prev.map((property) =>
+        property.id === propertyId
+          ? { ...property, ...updatedProperty }
+          : property,
+      ),
+    );
+  };
 
   const handleBookmark = async (propertyId: number) => {
     setProperties((prev) =>
@@ -192,6 +216,8 @@ export default function ContributingListingsPage() {
           <PropertyTable
             properties={properties}
             onBookmark={handleBookmark}
+            areas={areas}
+            onUpdateProperty={handleUpdateProperty}
             showPricePosition={false}
             showProviderHistory={false}
             highlightProviderId={highlightProviderId ?? null}

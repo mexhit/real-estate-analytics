@@ -19,12 +19,16 @@ import {
 } from "@mui/material";
 import {
   AutoFixHigh,
+  Edit,
   ErrorOutline,
   NewReleases,
   Star,
   StarBorderOutlined,
 } from "@mui/icons-material";
 import dayjs from "dayjs";
+import { type Area } from "@/api/areas";
+import { type UpdatePropertyPayload } from "@/api/properties";
+import { EditPropertyDialog } from "@/components/EditPropertyDialog";
 
 export interface PropertyTableItem {
   id: number;
@@ -37,6 +41,7 @@ export interface PropertyTableItem {
   areaName?: string | null;
   price: number;
   priceAmount?: number | null;
+  priceCurrency?: string | null;
   squareMeters?: number | null;
   areaAvgPricePerSqm?: number | null;
   areaAvgPriceCurrency?: string | null;
@@ -58,6 +63,11 @@ interface PropertyTableProps {
   properties: PropertyTableItem[];
   onBookmark: (propertyId: number) => void | Promise<void>;
   onRetryAiMetadata?: (propertyId: number) => void | Promise<void>;
+  areas?: Area[];
+  onUpdateProperty?: (
+    propertyId: number,
+    updates: UpdatePropertyPayload,
+  ) => Promise<void>;
   stickyHeader?: boolean;
   showPricePosition?: boolean;
   showProviderHistory?: boolean;
@@ -201,6 +211,8 @@ export function PropertyTable({
   properties,
   onBookmark,
   onRetryAiMetadata,
+  areas = [],
+  onUpdateProperty,
   stickyHeader = true,
   showPricePosition = true,
   showProviderHistory = true,
@@ -209,6 +221,8 @@ export function PropertyTable({
   const [retryingAiMetadataIds, setRetryingAiMetadataIds] = React.useState<
     Set<number>
   >(new Set());
+  const [editingProperty, setEditingProperty] =
+    React.useState<PropertyTableItem | null>(null);
 
   const handleRetryAiMetadata = async (propertyId: number) => {
     if (!onRetryAiMetadata || retryingAiMetadataIds.has(propertyId)) {
@@ -229,11 +243,17 @@ export function PropertyTable({
   };
 
   return (
+    <>
     <TableContainer>
       <Table stickyHeader={stickyHeader}>
         <TableHead>
           <TableRow>
             <TableCell width={40}></TableCell>
+            {onUpdateProperty && (
+              <TableCell sx={{ fontWeight: 600, width: 50 }} align="center">
+                Edit
+              </TableCell>
+            )}
             <TableCell sx={{ fontWeight: 600, width: 50 }} align="center">
               Save
             </TableCell>
@@ -341,6 +361,18 @@ export function PropertyTable({
                     </Tooltip>
                   </Box>
                 </TableCell>
+
+                {onUpdateProperty && (
+                  <TableCell align="center">
+                    <IconButton
+                      aria-label={`Edit property ${property.id}`}
+                      size="small"
+                      onClick={() => setEditingProperty(property)}
+                    >
+                      <Edit fontSize="small" />
+                    </IconButton>
+                  </TableCell>
+                )}
 
                 <TableCell align="center">
                   <IconButton
@@ -525,5 +557,16 @@ export function PropertyTable({
         </TableBody>
       </Table>
     </TableContainer>
+
+    {onUpdateProperty && (
+      <EditPropertyDialog
+        open={editingProperty !== null}
+        property={editingProperty}
+        areas={areas}
+        onClose={() => setEditingProperty(null)}
+        onSave={onUpdateProperty}
+      />
+    )}
+    </>
   );
 }

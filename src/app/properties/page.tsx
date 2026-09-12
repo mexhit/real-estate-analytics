@@ -20,7 +20,12 @@ import {
   Chip,
 } from "@mui/material";
 import { useSearchParams, useRouter } from "next/navigation";
-import { PROPERTY_TYPES, propertiesApi, type PropertyType } from "@/api/properties";
+import {
+  PROPERTY_TYPES,
+  propertiesApi,
+  type PropertyType,
+  type UpdatePropertyPayload,
+} from "@/api/properties";
 import { areasApi, type Area } from "@/api/areas";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs, { Dayjs } from "dayjs";
@@ -73,6 +78,24 @@ export default function PropertiesPage() {
       propertyId: propertyId,
       bookmarked: !products.find((p) => p.id === propertyId)?.bookmarked,
     });
+  };
+
+  const handleUpdateProperty = async (
+    propertyId: number,
+    updates: UpdatePropertyPayload,
+  ) => {
+    const updatedProperty = await propertiesApi.updateProperty(
+      propertyId,
+      updates,
+    );
+
+    setProducts((prev) =>
+      prev.map((property) =>
+        property.id === propertyId
+          ? { ...property, ...updatedProperty }
+          : property,
+      ),
+    );
   };
 
   const handleRetryAiMetadata = async (propertyId: number) => {
@@ -470,6 +493,8 @@ export default function PropertiesPage() {
             properties={products}
             onBookmark={handleBookmark}
             onRetryAiMetadata={handleRetryAiMetadata}
+            areas={areas}
+            onUpdateProperty={handleUpdateProperty}
           />
         )}
 
