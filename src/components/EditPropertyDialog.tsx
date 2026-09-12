@@ -33,6 +33,7 @@ function extractErrorMessage(err: unknown, fallback: string): string {
 interface EditableFields {
   title: string;
   description: string;
+  price: string;
   priceAmount: string;
   priceCurrency: string;
   squareMeters: string;
@@ -69,6 +70,7 @@ export function EditPropertyDialog({
       const initial: EditableFields = {
         title: property.title ?? "",
         description: property.description ?? "",
+        price: property.price ?? "",
         priceAmount:
           property.priceAmount != null ? String(property.priceAmount) : "",
         priceCurrency: property.priceCurrency ?? "",
@@ -116,6 +118,9 @@ export function EditPropertyDialog({
     }
     if (fields.description !== initialFields.description) {
       updates.description = fields.description;
+    }
+    if (fields.price !== initialFields.price) {
+      updates.price = fields.price;
     }
     if (fields.priceAmount !== initialFields.priceAmount) {
       updates.priceAmount =
@@ -184,6 +189,15 @@ export function EditPropertyDialog({
                   fullWidth
                   multiline
                   minRows={2}
+                />
+
+                <TextField
+                  label="Price"
+                  value={fields.price}
+                  onChange={(e) => setField("price", e.target.value)}
+                  required
+                  fullWidth
+                  helperText='The price as displayed, e.g. "250,000 €"'
                 />
 
                 <Box display="flex" gap={2}>
@@ -266,7 +280,7 @@ export function EditPropertyDialog({
           <Button
             type="submit"
             variant="contained"
-            disabled={saving || !fields?.title.trim()}
+            disabled={saving || !fields?.title.trim() || !fields?.price.trim()}
           >
             {saving ? "Saving..." : "Save"}
           </Button>

@@ -26,7 +26,7 @@ export interface Property {
   propertyType?: PropertyType | null;
   areaId?: number | null;
   areaName?: string | null;
-  price: number;
+  price: string;
   priceAmount?: number | null;
   priceCurrency?: string | null;
   squareMeters?: number | null;
@@ -86,6 +86,7 @@ export interface ExtractAiMetadataParams {
 export interface UpdatePropertyPayload {
   title?: string;
   description?: string;
+  price?: string;
   priceAmount?: number | null;
   priceCurrency?: string | null;
   squareMeters?: number | null;

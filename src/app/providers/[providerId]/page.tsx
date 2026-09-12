@@ -25,7 +25,7 @@ interface Property {
   providerId: string;
   title: string;
   description: string;
-  price: number;
+  price: string;
   priceAmount?: number | null;
   squareMeters?: number | null;
   url: string;
