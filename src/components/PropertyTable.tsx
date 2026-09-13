@@ -33,6 +33,7 @@ import { EditPropertyDialog } from "@/components/EditPropertyDialog";
 export interface PropertyTableItem {
   id: number;
   providerId: string;
+  source: string;
   title: string;
   description: string;
   aiResponseError?: string | null;
@@ -277,6 +278,7 @@ export function PropertyTable({
             {showProviderHistory && (
               <TableCell sx={{ fontWeight: 600, width: 50 }}>Repost</TableCell>
             )}
+            <TableCell sx={{ fontWeight: 600, width: 120 }}>Source</TableCell>
             <TableCell sx={{ fontWeight: 600, width: 130 }}>URL</TableCell>
           </TableRow>
         </TableHead>
@@ -535,6 +537,10 @@ export function PropertyTable({
                     </Link>
                   </TableCell>
                 )}
+
+                <TableCell sx={{ color: "text.secondary" }}>
+                  <Typography variant="body2">{property.source}</Typography>
+                </TableCell>
 
                 <TableCell>
                   <Button

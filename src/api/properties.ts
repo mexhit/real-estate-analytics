@@ -20,6 +20,7 @@ export type PricePosition = "above" | "below" | "in_line";
 export interface Property {
   id: number;
   providerId: string;
+  source: string;
   title: string;
   description: string;
   aiResponseError?: string | null;

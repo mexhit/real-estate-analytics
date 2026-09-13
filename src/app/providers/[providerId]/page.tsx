@@ -23,6 +23,7 @@ import { LogoutButton } from "@/app/LogoutButton";
 interface Property {
   id: number;
   providerId: string;
+  source: string;
   title: string;
   description: string;
   price: string;
@@ -164,6 +165,7 @@ export default function ProviderPropertiesPage() {
                 <TableCell>Description</TableCell>
                 <TableCell>Price (€)</TableCell>
                 <TableCell>Posted</TableCell>
+                <TableCell>Source</TableCell>
                 <TableCell>URL</TableCell>
               </TableRow>
             </TableHead>
@@ -204,6 +206,9 @@ export default function ProviderPropertiesPage() {
                     {/* Posted date */}
                     <TableCell sx={{ width: 140, color: "text.secondary" }}>
                       {formatDate(p.createdAt)}
+                    </TableCell>
+                    <TableCell sx={{ color: "text.secondary" }}>
+                      {p.source}
                     </TableCell>
                     <TableCell>
                       <a
