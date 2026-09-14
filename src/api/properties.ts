@@ -67,6 +67,8 @@ export interface GetPaginatedPropertiesParams {
   onlyUnseen?: boolean;
   onlyBookmarked?: boolean;
   onlyPriceChanged?: boolean;
+  onlyUntyped?: boolean;
+  onlyUnresolved?: boolean;
 }
 
 export interface GetPropertiesByProviderIdParams {

@@ -12,6 +12,7 @@ import {
   Divider,
   FormControlLabel,
   Switch,
+  Checkbox,
   Select,
   MenuItem,
   InputLabel,
@@ -56,6 +57,8 @@ export default function PropertiesPage() {
   const [onlyUnseen, setOnlyUnseen] = React.useState(false);
   const [onlyBookmarked, setOnlyBookmarked] = React.useState(false);
   const [onlyPriceChanged, setOnlyPriceChanged] = React.useState(false);
+  const [onlyUntyped, setOnlyUntyped] = React.useState(false);
+  const [onlyUnresolved, setOnlyUnresolved] = React.useState(false);
   const [preferencesLoaded, setPreferencesLoaded] = React.useState(false);
 
   const updateUrl = React.useCallback(
@@ -177,6 +180,8 @@ export default function PropertiesPage() {
           onlyUnseen,
           onlyBookmarked,
           onlyPriceChanged,
+          onlyUntyped,
+          onlyUnresolved,
         });
 
         setProducts(res.data);
@@ -200,6 +205,8 @@ export default function PropertiesPage() {
     onlyUnseen,
     onlyBookmarked,
     onlyPriceChanged,
+    onlyUntyped,
+    onlyUnresolved,
   ]);
 
   React.useEffect(() => {
@@ -347,7 +354,7 @@ export default function PropertiesPage() {
           slotProps={{ textField: { size: "small" } }}
         />
 
-        <FormControl size="small" sx={{ minWidth: 240 }}>
+        <FormControl size="small" sx={{ minWidth: 240 }} disabled={onlyUntyped}>
           <InputLabel id="property-types-label">Property types</InputLabel>
           <Select
             labelId="property-types-label"
@@ -377,8 +384,26 @@ export default function PropertiesPage() {
             ))}
           </Select>
         </FormControl>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={onlyUntyped}
+              onChange={(e) => {
+                const checked = e.target.checked;
 
-        <FormControl size="small" sx={{ minWidth: 200 }}>
+                setOnlyUntyped(checked);
+                if (checked) {
+                  setPropertyTypes([]);
+                }
+                setPage(0);
+                updateUrl(0);
+              }}
+            />
+          }
+          label="Only untyped"
+        />
+
+        <FormControl size="small" sx={{ minWidth: 200 }} disabled={onlyUnresolved}>
           <InputLabel id="areas-label">Area</InputLabel>
           <Select
             labelId="areas-label"
@@ -414,8 +439,31 @@ export default function PropertiesPage() {
             ))}
           </Select>
         </FormControl>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={onlyUnresolved}
+              onChange={(e) => {
+                const checked = e.target.checked;
 
-        {(fromDate || toDate || propertyTypes.length > 0 || areaIds.length > 0) && (
+                setOnlyUnresolved(checked);
+                if (checked) {
+                  setAreaIds([]);
+                }
+                setPage(0);
+                updateUrl(0);
+              }}
+            />
+          }
+          label="Only missing area"
+        />
+
+        {(fromDate ||
+          toDate ||
+          propertyTypes.length > 0 ||
+          areaIds.length > 0 ||
+          onlyUntyped ||
+          onlyUnresolved) && (
           <Button
             size="small"
             variant="outlined"
@@ -424,6 +472,8 @@ export default function PropertiesPage() {
               setToDate(null);
               setPropertyTypes([]);
               setAreaIds([]);
+              setOnlyUntyped(false);
+              setOnlyUnresolved(false);
               setPage(0);
               updateUrl(0);
             }}
