@@ -17,6 +17,7 @@ import {
   MenuItem,
   InputLabel,
   FormControl,
+  FormHelperText,
   OutlinedInput,
   Chip,
 } from "@mui/material";
@@ -24,6 +25,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import {
   PROPERTY_TYPES,
   propertiesApi,
+  type PropertySourceOption,
   type PropertyType,
   type UpdatePropertyPayload,
 } from "@/api/properties";
@@ -35,6 +37,7 @@ import { PropertyTable, type PropertyTableItem } from "@/components/PropertyTabl
 
 const PROPERTY_TYPES_STORAGE_KEY = "propertyTypes";
 const AREA_IDS_STORAGE_KEY = "areaIds";
+const SOURCES_STORAGE_KEY = "sources";
 
 export default function PropertiesPage() {
   const router = useRouter();
@@ -54,6 +57,10 @@ export default function PropertiesPage() {
   const [propertyTypes, setPropertyTypes] = React.useState<PropertyType[]>([]);
   const [areas, setAreas] = React.useState<Area[]>([]);
   const [areaIds, setAreaIds] = React.useState<number[]>([]);
+  const [sourceOptions, setSourceOptions] = React.useState<PropertySourceOption[]>([]);
+  const [sourcesLoading, setSourcesLoading] = React.useState(true);
+  const [sourcesError, setSourcesError] = React.useState<string | null>(null);
+  const [sources, setSources] = React.useState<string[]>([]);
   const [onlyUnseen, setOnlyUnseen] = React.useState(false);
   const [onlyBookmarked, setOnlyBookmarked] = React.useState(false);
   const [onlyPriceChanged, setOnlyPriceChanged] = React.useState(false);
@@ -120,11 +127,35 @@ export default function PropertiesPage() {
   }, []);
 
   React.useEffect(() => {
+    propertiesApi
+      .getPropertySources()
+      .then((options) => {
+        setSourceOptions(options);
+        setSourcesLoading(false);
+      })
+      .catch(() => {
+        setSourcesError("Couldn't load sources");
+        setSourcesLoading(false);
+      });
+  }, []);
+
+  React.useEffect(() => {
+    if (sourcesLoading) {
+      return;
+    }
+
+    const validValues = new Set(sourceOptions.map((option) => option.value));
+
+    setSources((prev) => prev.filter((value) => validValues.has(value)));
+  }, [sourcesLoading, sourceOptions]);
+
+  React.useEffect(() => {
     const storedFromDate = localStorage.getItem("fromDate");
     const storedToDate = localStorage.getItem("toDate");
     const storedRowsPerPage = localStorage.getItem("rowsPerPage");
     const storedPropertyTypes = localStorage.getItem(PROPERTY_TYPES_STORAGE_KEY);
     const storedAreaIds = localStorage.getItem(AREA_IDS_STORAGE_KEY);
+    const storedSources = localStorage.getItem(SOURCES_STORAGE_KEY);
 
     setFromDate(storedFromDate ? dayjs(storedFromDate) : null);
     setToDate(storedToDate ? dayjs(storedToDate) : null);
@@ -159,6 +190,19 @@ export default function PropertiesPage() {
         localStorage.removeItem(AREA_IDS_STORAGE_KEY);
       }
     }
+    if (storedSources) {
+      try {
+        const parsed = JSON.parse(storedSources);
+
+        if (Array.isArray(parsed)) {
+          setSources(
+            parsed.filter((value): value is string => typeof value === "string"),
+          );
+        }
+      } catch {
+        localStorage.removeItem(SOURCES_STORAGE_KEY);
+      }
+    }
     setPreferencesLoaded(true);
   }, []);
 
@@ -177,6 +221,7 @@ export default function PropertiesPage() {
           toDate: toDate ? toDate.endOf("day").valueOf() : undefined,
           propertyTypes: propertyTypes.length > 0 ? propertyTypes : undefined,
           areaIds: areaIds.length > 0 ? areaIds : undefined,
+          sources: sources.length > 0 ? sources : undefined,
           onlyUnseen,
           onlyBookmarked,
           onlyPriceChanged,
@@ -202,6 +247,7 @@ export default function PropertiesPage() {
     toDate,
     propertyTypes,
     areaIds,
+    sources,
     onlyUnseen,
     onlyBookmarked,
     onlyPriceChanged,
@@ -255,6 +301,14 @@ export default function PropertiesPage() {
 
     localStorage.setItem(AREA_IDS_STORAGE_KEY, JSON.stringify(areaIds));
   }, [preferencesLoaded, areaIds]);
+
+  React.useEffect(() => {
+    if (!preferencesLoaded) {
+      return;
+    }
+
+    localStorage.setItem(SOURCES_STORAGE_KEY, JSON.stringify(sources));
+  }, [preferencesLoaded, sources]);
 
   const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
@@ -458,10 +512,54 @@ export default function PropertiesPage() {
           label="Only missing area"
         />
 
+        <FormControl
+          size="small"
+          sx={{ minWidth: 200 }}
+          disabled={sourcesLoading || Boolean(sourcesError)}
+          error={Boolean(sourcesError)}
+        >
+          <InputLabel id="sources-label">Source</InputLabel>
+          <Select
+            labelId="sources-label"
+            multiple
+            value={sources}
+            onChange={(event) => {
+              const value = event.target.value;
+              setSources(typeof value === "string" ? value.split(",") : value);
+              setPage(0);
+              updateUrl(0);
+            }}
+            input={<OutlinedInput label="Source" />}
+            renderValue={(selected) => (
+              <Box display="flex" gap={0.5} flexWrap="wrap">
+                {selected.map((value) => (
+                  <Chip
+                    key={value}
+                    label={
+                      sourceOptions.find((option) => option.value === value)
+                        ?.label ?? value
+                    }
+                    size="small"
+                  />
+                ))}
+              </Box>
+            )}
+          >
+            {sourceOptions.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </Select>
+          {sourcesLoading && <FormHelperText>Loading sources…</FormHelperText>}
+          {sourcesError && <FormHelperText>{sourcesError}</FormHelperText>}
+        </FormControl>
+
         {(fromDate ||
           toDate ||
           propertyTypes.length > 0 ||
           areaIds.length > 0 ||
+          sources.length > 0 ||
           onlyUntyped ||
           onlyUnresolved) && (
           <Button
@@ -472,6 +570,7 @@ export default function PropertiesPage() {
               setToDate(null);
               setPropertyTypes([]);
               setAreaIds([]);
+              setSources([]);
               setOnlyUntyped(false);
               setOnlyUnresolved(false);
               setPage(0);

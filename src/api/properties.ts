@@ -15,6 +15,11 @@ export const PROPERTY_TYPES = [
 
 export type PropertyType = (typeof PROPERTY_TYPES)[number];
 
+export interface PropertySourceOption {
+  value: string;
+  label: string;
+}
+
 export type PricePosition = "above" | "below" | "in_line";
 
 export interface Property {
@@ -64,6 +69,7 @@ export interface GetPaginatedPropertiesParams {
   toDate?: number;
   propertyTypes?: PropertyType[];
   areaIds?: number[];
+  sources?: string[];
   onlyUnseen?: boolean;
   onlyBookmarked?: boolean;
   onlyPriceChanged?: boolean;
@@ -110,6 +116,12 @@ class PropertiesApi {
     return apiClient
       .get("/properties", { params })
       .then((response: { data: PaginatedResponse<Property> }) => response.data);
+  }
+
+  getPropertySources(): Promise<PropertySourceOption[]> {
+    return apiClient
+      .get("/properties/sources")
+      .then((response: { data: PropertySourceOption[] }) => response.data);
   }
 
   getPropertiesByProviderId(
