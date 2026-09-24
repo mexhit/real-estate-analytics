@@ -140,16 +140,6 @@ export default function PropertiesPage() {
   }, []);
 
   React.useEffect(() => {
-    if (sourcesLoading) {
-      return;
-    }
-
-    const validValues = new Set(sourceOptions.map((option) => option.value));
-
-    setSources((prev) => prev.filter((value) => validValues.has(value)));
-  }, [sourcesLoading, sourceOptions]);
-
-  React.useEffect(() => {
     const storedFromDate = localStorage.getItem("fromDate");
     const storedToDate = localStorage.getItem("toDate");
     const storedRowsPerPage = localStorage.getItem("rowsPerPage");
