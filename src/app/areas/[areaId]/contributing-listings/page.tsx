@@ -16,18 +16,26 @@ import dayjs from "dayjs";
 import {
   areasApi,
   type Area,
+  type ContributingListingsDistribution,
   type ContributingListingsSummary,
 } from "@/api/areas";
 import { propertiesApi, type UpdatePropertyPayload } from "@/api/properties";
 import { LogoutButton } from "@/app/LogoutButton";
+import { PricePerSqmHistogram } from "@/components/PricePerSqmHistogram";
 import { PropertyTable, type PropertyTableItem } from "@/components/PropertyTable";
 
-function formatPrice(value: number | null | undefined): string {
+function formatPrice(
+  value: number | null | undefined,
+  currency: string | null,
+): string {
   if (value == null || isNaN(value)) return "-";
 
-  return `${new Intl.NumberFormat("en-US", {
+  const amount = new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 0,
-  }).format(value)} €`;
+  }).format(value);
+  const symbol = currency === "EUR" ? "€" : (currency ?? "");
+
+  return symbol ? `${amount} ${symbol}` : amount;
 }
 
 function formatDate(date: string | null): string {
@@ -47,6 +55,8 @@ export default function ContributingListingsPage() {
   const [summary, setSummary] = React.useState<ContributingListingsSummary | null>(
     null,
   );
+  const [distribution, setDistribution] =
+    React.useState<ContributingListingsDistribution | null>(null);
   const [total, setTotal] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -82,6 +92,15 @@ export default function ContributingListingsPage() {
 
     fetchContributingListings();
   }, [areaId, page, rowsPerPage, highlightProviderId]);
+
+  React.useEffect(() => {
+    if (!areaId) return;
+
+    areasApi
+      .getContributingListingsDistribution(areaId)
+      .then(setDistribution)
+      .catch(() => setDistribution(null));
+  }, [areaId]);
 
   React.useEffect(() => {
     areasApi.getAreas().then(setAreas).catch(() => setAreas([]));
@@ -168,9 +187,8 @@ export default function ContributingListingsPage() {
             </Typography>
             <Typography variant="body1" fontWeight={600}>
               {summary.avgPricePerSqm != null
-                ? `${formatPrice(summary.avgPricePerSqm)}/m²`
+                ? `${formatPrice(summary.avgPricePerSqm, summary.avgPriceCurrency)}/m²`
                 : "-"}
-              {summary.avgPriceCurrency ? ` (${summary.avgPriceCurrency})` : ""}
             </Typography>
           </Box>
           <Box>
@@ -190,6 +208,15 @@ export default function ContributingListingsPage() {
             </Typography>
           </Box>
         </Paper>
+      )}
+
+      {distribution && distribution.listings.length > 0 && (
+        <PricePerSqmHistogram
+          listings={distribution.listings}
+          avgPricePerSqm={distribution.avgPricePerSqm}
+          currency={distribution.avgPriceCurrency}
+          highlightProviderId={highlightProviderId ?? null}
+        />
       )}
 
       {summary?.highlightedListingIncluded === false && (

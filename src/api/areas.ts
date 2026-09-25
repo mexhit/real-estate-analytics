@@ -33,6 +33,21 @@ export interface ContributingListingsResponse {
   totalPages: number;
 }
 
+export interface DistributionListing {
+  id: number;
+  providerId: string;
+  title: string;
+  priceAmount: number;
+  squareMeters: number;
+  pricePerSqm: number;
+}
+
+export interface ContributingListingsDistribution {
+  avgPricePerSqm: number | null;
+  avgPriceCurrency: string | null;
+  listings: DistributionListing[];
+}
+
 export interface GetContributingListingsParams {
   areaId: number | string;
   page: number;
@@ -59,6 +74,17 @@ class AreasApi {
       })
       .then(
         (response: { data: ContributingListingsResponse }) => response.data,
+      );
+  }
+
+  getContributingListingsDistribution(
+    areaId: number | string,
+  ): Promise<ContributingListingsDistribution> {
+    return apiClient
+      .get(`/areas/${areaId}/contributing-listings/distribution`)
+      .then(
+        (response: { data: ContributingListingsDistribution }) =>
+          response.data,
       );
   }
 
