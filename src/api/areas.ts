@@ -53,6 +53,9 @@ export interface GetContributingListingsParams {
   page: number;
   limit: number;
   highlightProviderId?: string;
+  // `min` inclusive, `max` exclusive; omit `max` for no upper bound.
+  minPricePerSqm?: number;
+  maxPricePerSqm?: number;
 }
 
 class AreasApi {
@@ -67,10 +70,18 @@ class AreasApi {
     page,
     limit,
     highlightProviderId,
+    minPricePerSqm,
+    maxPricePerSqm,
   }: GetContributingListingsParams): Promise<ContributingListingsResponse> {
     return apiClient
       .get(`/areas/${areaId}/contributing-listings`, {
-        params: { page, limit, highlightProviderId },
+        params: {
+          page,
+          limit,
+          highlightProviderId,
+          minPricePerSqm,
+          maxPricePerSqm,
+        },
       })
       .then(
         (response: { data: ContributingListingsResponse }) => response.data,

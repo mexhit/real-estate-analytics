@@ -10,27 +10,35 @@ import {
 import { useDrawingArea, useXScale } from "@mui/x-charts/hooks";
 import type { DistributionListing } from "@/api/areas";
 
-interface PricePerSqmHistogramProps {
-  listings: DistributionListing[];
-  avgPricePerSqm: number | null;
-  currency: string | null;
-  highlightProviderId: string | null;
-}
-
-interface Bucket {
+export interface PricePerSqmBucket {
   from: number;
   to: number;
   label: string;
   listings: DistributionListing[];
 }
 
+export interface PricePerSqmBuckets {
+  buckets: PricePerSqmBucket[];
+  start: number;
+  step: number;
+}
+
+interface PricePerSqmHistogramProps {
+  histogram: PricePerSqmBuckets;
+  avgPricePerSqm: number | null;
+  currency: string | null;
+  highlightedBucketIndex: number;
+  selectedBucketIndex: number | null;
+  onSelectBucket: (index: number | null) => void;
+}
+
 const TARGET_BUCKET_COUNT = 10;
-const MAX_TOOLTIP_LISTINGS = 10;
 const BAR_COLOR = "#2563eb";
+const SELECTED_COLOR = "#1e3a8a";
 const HIGHLIGHT_COLOR = "#f59e0b";
 const AVERAGE_COLOR = "#dc2626";
 
-function formatAmount(value: number, currency: string | null): string {
+export function formatAmount(value: number, currency: string | null): string {
   const amount = new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 0,
   }).format(value);
@@ -49,10 +57,10 @@ function niceStep(rawStep: number): number {
   return multiplier * magnitude;
 }
 
-function buildBuckets(
+export function buildPricePerSqmBuckets(
   listings: DistributionListing[],
   currency: string | null,
-): { buckets: Bucket[]; start: number; step: number } {
+): PricePerSqmBuckets {
   const values = listings.map((listing) => listing.pricePerSqm);
   const min = Math.min(...values);
   const max = Math.max(...values);
@@ -62,7 +70,7 @@ function buildBuckets(
   const start = Math.floor(min / step) * step;
   const count = Math.floor((max - start) / step) + 1;
 
-  const buckets: Bucket[] = Array.from({ length: count }, (_, index) => {
+  const buckets: PricePerSqmBucket[] = Array.from({ length: count }, (_, index) => {
     const from = start + index * step;
     const to = from + step;
 
@@ -89,6 +97,19 @@ function buildBuckets(
   return { buckets, start, step };
 }
 
+export function findHighlightedBucketIndex(
+  buckets: PricePerSqmBucket[],
+  highlightProviderId: string | null,
+): number {
+  if (!highlightProviderId) return -1;
+
+  return buckets.findIndex((bucket) =>
+    bucket.listings.some(
+      (listing) => listing.providerId === highlightProviderId,
+    ),
+  );
+}
+
 function AverageLine({
   avgPricePerSqm,
   buckets,
@@ -96,7 +117,7 @@ function AverageLine({
   step,
 }: {
   avgPricePerSqm: number;
-  buckets: Bucket[];
+  buckets: PricePerSqmBucket[];
   start: number;
   step: number;
 }) {
@@ -125,63 +146,27 @@ function AverageLine({
   );
 }
 
-const TooltipContext = React.createContext<{
-  buckets: Bucket[];
-  currency: string | null;
-  highlightProviderId: string | null;
-}>({ buckets: [], currency: null, highlightProviderId: null });
+const TooltipContext = React.createContext<PricePerSqmBucket[]>([]);
 
 function BucketTooltip() {
-  const { buckets, currency, highlightProviderId } =
-    React.useContext(TooltipContext);
+  const buckets = React.useContext(TooltipContext);
   const item = useItemTooltip<"bar">();
   const bucket = item ? buckets[item.identifier.dataIndex] : undefined;
 
   return (
     <ChartsTooltipContainer trigger="item">
       {bucket && (
-        <Paper elevation={3} sx={{ p: 1.5, maxWidth: 360 }}>
+        <Paper elevation={3} sx={{ p: 1.5 }}>
           <Typography variant="subtitle2" fontWeight={700}>
             {bucket.label}/m²
           </Typography>
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" color="text.secondary" component="p">
             {bucket.listings.length}{" "}
             {bucket.listings.length === 1 ? "listing" : "listings"}
           </Typography>
-          <Box component="ul" sx={{ m: 0, mt: 1, pl: 2 }}>
-            {bucket.listings.slice(0, MAX_TOOLTIP_LISTINGS).map((listing) => (
-              <Box
-                component="li"
-                key={listing.id}
-                sx={{
-                  fontSize: 13,
-                  mb: 0.5,
-                  fontWeight:
-                    listing.providerId === highlightProviderId ? 700 : 400,
-                }}
-              >
-                <Box
-                  component="span"
-                  sx={{
-                    display: "block",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {listing.title}
-                </Box>
-                <Box component="span" sx={{ color: "text.secondary" }}>
-                  {formatAmount(listing.priceAmount, currency)} ·{" "}
-                  {listing.squareMeters} m² ·{" "}
-                  {formatAmount(listing.pricePerSqm, currency)}/m²
-                </Box>
-              </Box>
-            ))}
-          </Box>
-          {bucket.listings.length > MAX_TOOLTIP_LISTINGS && (
+          {bucket.listings.length > 0 && (
             <Typography variant="caption" color="text.secondary">
-              +{bucket.listings.length - MAX_TOOLTIP_LISTINGS} more
+              Click to see listings
             </Typography>
           )}
         </Paper>
@@ -191,50 +176,44 @@ function BucketTooltip() {
 }
 
 export function PricePerSqmHistogram({
-  listings,
+  histogram: { buckets, start, step },
   avgPricePerSqm,
   currency,
-  highlightProviderId,
+  highlightedBucketIndex,
+  selectedBucketIndex,
+  onSelectBucket,
 }: PricePerSqmHistogramProps) {
-  const { buckets, start, step } = React.useMemo(
-    () => buildBuckets(listings, currency),
-    [listings, currency],
-  );
-
-  const highlightedBucketIndex = highlightProviderId
-    ? buckets.findIndex((bucket) =>
-        bucket.listings.some(
-          (listing) => listing.providerId === highlightProviderId,
-        ),
-      )
-    : -1;
-
   const HighlightableBar = React.useCallback(
     (props: BarProps) => {
-      const color =
-        props.dataIndex === highlightedBucketIndex
-          ? HIGHLIGHT_COLOR
-          : props.color;
+      let color = props.color;
+      if (props.dataIndex === selectedBucketIndex) color = SELECTED_COLOR;
+      if (props.dataIndex === highlightedBucketIndex) color = HIGHLIGHT_COLOR;
 
       return (
         <BarElement
           {...props}
           color={color}
-          style={{ ...props.style, fill: color }}
+          style={{ ...props.style, fill: color, cursor: "pointer" }}
         />
       );
     },
-    [highlightedBucketIndex],
+    [highlightedBucketIndex, selectedBucketIndex],
   );
+
+  const handleItemClick = (_: unknown, { dataIndex }: { dataIndex: number }) => {
+    if (dataIndex === selectedBucketIndex) {
+      onSelectBucket(null);
+    } else if (buckets[dataIndex]?.listings.length) {
+      onSelectBucket(dataIndex);
+    }
+  };
 
   return (
     <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
       <Typography variant="subtitle1" fontWeight={600}>
         Price/m² distribution
       </Typography>
-      <TooltipContext.Provider
-        value={{ buckets, currency, highlightProviderId }}
-      >
+      <TooltipContext.Provider value={buckets}>
         <BarChart
           height={300}
           dataset={buckets.map((bucket) => ({
@@ -260,6 +239,7 @@ export function PricePerSqmHistogram({
           series={[{ dataKey: "count", color: BAR_COLOR }]}
           slots={{ bar: HighlightableBar, tooltip: BucketTooltip }}
           grid={{ horizontal: true }}
+          onItemClick={handleItemClick}
           hideLegend
           margin={{ left: 8, right: 16, top: 12, bottom: 8 }}
         >

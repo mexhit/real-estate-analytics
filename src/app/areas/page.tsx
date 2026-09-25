@@ -24,9 +24,11 @@ import {
   TableHead,
   TableRow,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import BarChartIcon from "@mui/icons-material/BarChart";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import dayjs from "dayjs";
@@ -312,7 +314,27 @@ export default function AreasPage() {
                         ? dayjs(area.snapshotAt).format("DD MMM YYYY HH:mm")
                         : "No data"}
                     </TableCell>
-                    <TableCell align="right">
+                    <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
+                      <Tooltip
+                        title={
+                          area.snapshotAt
+                            ? "Listings behind average"
+                            : "No price snapshot yet"
+                        }
+                      >
+                        {/* span keeps the tooltip working when the button is disabled */}
+                        <span>
+                          <IconButton
+                            aria-label={`Listings behind ${area.name} average`}
+                            size="small"
+                            component={Link}
+                            href={`/areas/${area.id}/contributing-listings`}
+                            disabled={!area.snapshotAt}
+                          >
+                            <BarChartIcon fontSize="small" />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
                       <IconButton
                         aria-label={`Edit area ${area.name}`}
                         size="small"
