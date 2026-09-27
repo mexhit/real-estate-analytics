@@ -260,7 +260,6 @@ export function PropertyTable({
             </TableCell>
             <TableCell sx={{ fontWeight: 600, width: 50 }}>ID</TableCell>
             <TableCell sx={{ fontWeight: 600 }}>Title</TableCell>
-            <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
             <TableCell sx={{ fontWeight: 600, width: 140 }}>Type</TableCell>
             <TableCell sx={{ fontWeight: 600, width: 140 }}>Area</TableCell>
             <TableCell sx={{ fontWeight: 600, width: 140 }}>Price (€)</TableCell>
@@ -391,25 +390,29 @@ export function PropertyTable({
 
                 <TableCell>{property.id}</TableCell>
 
-                <TableCell sx={{ maxWidth: 200 }}>
+                <TableCell sx={{ maxWidth: 450 }}>
                   <Tooltip title={property.title} placement="top" arrow>
                     <Typography noWrap sx={{ cursor: "default" }}>
                       {property.title}
                     </Typography>
                   </Tooltip>
-                </TableCell>
-
-                <TableCell sx={{ maxWidth: 250 }}>
-                  <Tooltip title={property.description} placement="top" arrow>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      noWrap
-                      sx={{ cursor: "default" }}
-                    >
-                      {property.description}
-                    </Typography>
-                  </Tooltip>
+                  {property.description && (
+                    <Tooltip title={property.description} placement="top" arrow>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                          cursor: "default",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {property.description}
+                      </Typography>
+                    </Tooltip>
+                  )}
                 </TableCell>
 
                 <TableCell sx={{ color: "text.secondary" }}>
