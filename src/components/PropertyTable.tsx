@@ -19,6 +19,8 @@ import {
 } from "@mui/material";
 import {
   AutoFixHigh,
+  Check,
+  Close,
   Edit,
   ErrorOutline,
   NewReleases,
@@ -40,6 +42,7 @@ export interface PropertyTableItem {
   propertyType?: import("@/api/properties").PropertyType | null;
   areaId?: number | null;
   areaName?: string | null;
+  isFurnished?: boolean | null;
   price: string;
   priceAmount?: number | null;
   priceCurrency?: string | null;
@@ -262,6 +265,9 @@ export function PropertyTable({
             <TableCell sx={{ fontWeight: 600 }}>Title</TableCell>
             <TableCell sx={{ fontWeight: 600, width: 140 }}>Type</TableCell>
             <TableCell sx={{ fontWeight: 600, width: 140 }}>Area</TableCell>
+            <TableCell sx={{ fontWeight: 600, width: 90 }} align="center">
+              Furnished
+            </TableCell>
             <TableCell sx={{ fontWeight: 600, width: 140 }}>Price (€)</TableCell>
             {showProviderHistory && (
               <TableCell sx={{ fontWeight: 600, width: 140 }}>
@@ -430,6 +436,20 @@ export function PropertyTable({
                   <Typography variant="body2">
                     {property.areaName || "—"}
                   </Typography>
+                </TableCell>
+
+                <TableCell align="center" sx={{ color: "text.secondary" }}>
+                  {property.isFurnished === true ? (
+                    <Tooltip title="Furnished">
+                      <Check fontSize="small" color="success" />
+                    </Tooltip>
+                  ) : property.isFurnished === false ? (
+                    <Tooltip title="Not furnished">
+                      <Close fontSize="small" color="error" />
+                    </Tooltip>
+                  ) : (
+                    <Typography variant="body2">—</Typography>
+                  )}
                 </TableCell>
 
                 <TableCell sx={{ fontWeight: 600 }}>

@@ -38,6 +38,9 @@ import { PropertyTable, type PropertyTableItem } from "@/components/PropertyTabl
 const PROPERTY_TYPES_STORAGE_KEY = "propertyTypes";
 const AREA_IDS_STORAGE_KEY = "areaIds";
 const SOURCES_STORAGE_KEY = "sources";
+const FURNISHED_STORAGE_KEY = "furnished";
+
+type FurnishedFilter = "any" | "yes" | "no";
 
 export default function PropertiesPage() {
   const router = useRouter();
@@ -61,6 +64,7 @@ export default function PropertiesPage() {
   const [sourcesLoading, setSourcesLoading] = React.useState(true);
   const [sourcesError, setSourcesError] = React.useState<string | null>(null);
   const [sources, setSources] = React.useState<string[]>([]);
+  const [furnished, setFurnished] = React.useState<FurnishedFilter>("any");
   const [onlyUnseen, setOnlyUnseen] = React.useState(false);
   const [onlyBookmarked, setOnlyBookmarked] = React.useState(false);
   const [onlyPriceChanged, setOnlyPriceChanged] = React.useState(false);
@@ -146,6 +150,7 @@ export default function PropertiesPage() {
     const storedPropertyTypes = localStorage.getItem(PROPERTY_TYPES_STORAGE_KEY);
     const storedAreaIds = localStorage.getItem(AREA_IDS_STORAGE_KEY);
     const storedSources = localStorage.getItem(SOURCES_STORAGE_KEY);
+    const storedFurnished = localStorage.getItem(FURNISHED_STORAGE_KEY);
 
     setFromDate(storedFromDate ? dayjs(storedFromDate) : null);
     setToDate(storedToDate ? dayjs(storedToDate) : null);
@@ -193,6 +198,9 @@ export default function PropertiesPage() {
         localStorage.removeItem(SOURCES_STORAGE_KEY);
       }
     }
+    if (storedFurnished === "yes" || storedFurnished === "no") {
+      setFurnished(storedFurnished);
+    }
     setPreferencesLoaded(true);
   }, []);
 
@@ -212,6 +220,7 @@ export default function PropertiesPage() {
           propertyTypes: propertyTypes.length > 0 ? propertyTypes : undefined,
           areaIds: areaIds.length > 0 ? areaIds : undefined,
           sources: sources.length > 0 ? sources : undefined,
+          isFurnished: furnished === "any" ? undefined : furnished === "yes",
           onlyUnseen,
           onlyBookmarked,
           onlyPriceChanged,
@@ -238,6 +247,7 @@ export default function PropertiesPage() {
     propertyTypes,
     areaIds,
     sources,
+    furnished,
     onlyUnseen,
     onlyBookmarked,
     onlyPriceChanged,
@@ -299,6 +309,14 @@ export default function PropertiesPage() {
 
     localStorage.setItem(SOURCES_STORAGE_KEY, JSON.stringify(sources));
   }, [preferencesLoaded, sources]);
+
+  React.useEffect(() => {
+    if (!preferencesLoaded) {
+      return;
+    }
+
+    localStorage.setItem(FURNISHED_STORAGE_KEY, furnished);
+  }, [preferencesLoaded, furnished]);
 
   const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
@@ -545,11 +563,30 @@ export default function PropertiesPage() {
           {sourcesError && <FormHelperText>{sourcesError}</FormHelperText>}
         </FormControl>
 
+        <FormControl size="small" sx={{ minWidth: 140 }}>
+          <InputLabel id="furnished-label">Furnished</InputLabel>
+          <Select
+            labelId="furnished-label"
+            value={furnished}
+            label="Furnished"
+            onChange={(event) => {
+              setFurnished(event.target.value as FurnishedFilter);
+              setPage(0);
+              updateUrl(0);
+            }}
+          >
+            <MenuItem value="any">Any</MenuItem>
+            <MenuItem value="yes">Yes</MenuItem>
+            <MenuItem value="no">No</MenuItem>
+          </Select>
+        </FormControl>
+
         {(fromDate ||
           toDate ||
           propertyTypes.length > 0 ||
           areaIds.length > 0 ||
           sources.length > 0 ||
+          furnished !== "any" ||
           onlyUntyped ||
           onlyUnresolved) && (
           <Button
@@ -561,6 +598,7 @@ export default function PropertiesPage() {
               setPropertyTypes([]);
               setAreaIds([]);
               setSources([]);
+              setFurnished("any");
               setOnlyUntyped(false);
               setOnlyUnresolved(false);
               setPage(0);

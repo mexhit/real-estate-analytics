@@ -32,6 +32,7 @@ export interface Property {
   propertyType?: PropertyType | null;
   areaId?: number | null;
   areaName?: string | null;
+  isFurnished?: boolean | null;
   price: string;
   priceAmount?: number | null;
   priceCurrency?: string | null;
@@ -70,6 +71,7 @@ export interface GetPaginatedPropertiesParams {
   propertyTypes?: PropertyType[];
   areaIds?: number[];
   sources?: string[];
+  isFurnished?: boolean;
   onlyUnseen?: boolean;
   onlyBookmarked?: boolean;
   onlyPriceChanged?: boolean;
