@@ -19,9 +19,11 @@ import {
 } from "@mui/material";
 import {
   AutoFixHigh,
+  CalendarTodayOutlined,
   Check,
   Edit,
   ErrorOutline,
+  LocationOnOutlined,
   OpenInNew,
   Repeat,
   Star,
@@ -254,7 +256,7 @@ export function PropertyTable({
               <TableCell sx={{ ...headerCellSx, width: 220 }} align="right">
                 Price
               </TableCell>
-              <TableCell sx={{ ...headerCellSx, width: 170 }}>Listed</TableCell>
+              <TableCell sx={{ ...headerCellSx, width: 240 }}>Area</TableCell>
               <TableCell sx={{ ...headerCellSx, width: 260 }} align="right">
                 Source
               </TableCell>
@@ -365,19 +367,6 @@ export function PropertyTable({
                         gap: 1.5,
                       }}
                     >
-                      {property.areaName ? (
-                        <Typography variant="body2" fontWeight={600}>
-                          {property.areaName}
-                        </Typography>
-                      ) : (
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          fontStyle="italic"
-                        >
-                          Area not set
-                        </Typography>
-                      )}
                       {property.propertyType && (
                         <Chip
                           label={property.propertyType}
@@ -406,6 +395,43 @@ export function PropertyTable({
                         <Typography variant="body2" color="text.secondary">
                           Unfurnished
                         </Typography>
+                      )}
+                      <Tooltip
+                        title={`Active from ${formatDate(
+                          property.firstPostedAt,
+                        )} to ${formatDate(property.lastPostedAt)}`}
+                        arrow
+                      >
+                        <Box
+                          sx={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 0.5,
+                            color: "text.secondary",
+                          }}
+                        >
+                          <CalendarTodayOutlined sx={{ fontSize: 16 }} />
+                          <Typography variant="body2" color="text.secondary">
+                            Listed {formatDate(property.createdAt)} ·{" "}
+                            {formatListedAge(property.createdAt)}
+                          </Typography>
+                        </Box>
+                      </Tooltip>
+                      {showProviderHistory && repostCount > 1 && (
+                        <Link
+                          href={`/providers/${property.providerId}`}
+                          style={{ textDecoration: "none" }}
+                          target="_blank"
+                        >
+                          <Chip
+                            icon={<Repeat />}
+                            label={`× ${repostCount}`}
+                            size="small"
+                            color="warning"
+                            variant="outlined"
+                            sx={{ cursor: "pointer" }}
+                          />
+                        </Link>
                       )}
                       <Typography variant="body2" color="text.secondary">
                         #{property.id}
@@ -500,42 +526,27 @@ export function PropertyTable({
                   </TableCell>
 
                   <TableCell>
-                    <Typography fontWeight={600}>
-                      {formatDate(property.createdAt)}
-                    </Typography>
                     <Box
                       sx={{
-                        mt: 0.5,
                         display: "flex",
                         alignItems: "center",
-                        gap: 1,
+                        gap: 0.75,
+                        minWidth: 0,
                       }}
                     >
-                      <Tooltip
-                        title={`Active from ${formatDate(
-                          property.firstPostedAt,
-                        )} to ${formatDate(property.lastPostedAt)}`}
-                        arrow
-                      >
-                        <Typography variant="body2" color="text.secondary">
-                          {formatListedAge(property.createdAt)}
+                      <LocationOnOutlined fontSize="small" color="primary" />
+                      {property.areaName ? (
+                        <Typography fontWeight={600} noWrap>
+                          {property.areaName}
                         </Typography>
-                      </Tooltip>
-                      {showProviderHistory && repostCount > 1 && (
-                        <Link
-                          href={`/providers/${property.providerId}`}
-                          style={{ textDecoration: "none" }}
-                          target="_blank"
+                      ) : (
+                        <Typography
+                          color="text.secondary"
+                          fontStyle="italic"
+                          noWrap
                         >
-                          <Chip
-                            icon={<Repeat />}
-                            label={`× ${repostCount}`}
-                            size="small"
-                            color="warning"
-                            variant="outlined"
-                            sx={{ cursor: "pointer" }}
-                          />
-                        </Link>
+                          Area not set
+                        </Typography>
                       )}
                     </Box>
                   </TableCell>
