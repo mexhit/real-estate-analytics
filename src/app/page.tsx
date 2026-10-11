@@ -18,7 +18,7 @@ import {
   PROPERTY_TYPES,
   type NewPropertySeriesPoint,
 } from "@/api/properties";
-import { AppHeader } from "@/components/AppHeader";
+import { AppHeader, WARM_BG } from "@/components/AppHeader";
 import {
   PropertyTable,
   type PropertyTableItem,
@@ -205,8 +205,7 @@ export default function DashboardPage() {
       p={{ xs: 2, md: 3 }}
       sx={{
         minHeight: "100vh",
-        background:
-          "linear-gradient(180deg, #f8fafc 0%, #eef2ff 44%, #f8fafc 100%)",
+        bgcolor: WARM_BG,
       }}
     >
       <Box
