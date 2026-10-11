@@ -1,12 +1,10 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import {
   Alert,
   Box,
-  Button,
   Chip,
   CircularProgress,
   Paper,
@@ -21,7 +19,7 @@ import {
   type ContributingListingsSummary,
 } from "@/api/areas";
 import { propertiesApi, type UpdatePropertyPayload } from "@/api/properties";
-import { LogoutButton } from "@/app/LogoutButton";
+import { AppHeader, WARM_BG } from "@/components/AppHeader";
 import {
   buildPricePerSqmBuckets,
   findHighlightedBucketIndex,
@@ -207,29 +205,18 @@ export default function ContributingListingsPage() {
   }
 
   return (
-    <Box p={3}>
+    <Box sx={{ minHeight: "100vh", bgcolor: WARM_BG }}>
+      <AppHeader />
+      <Box p={3}>
       <Box
         display="flex"
         justifyContent="space-between"
         alignItems="center"
         mb={2}
       >
-        <Typography variant="h5" fontWeight={600}>
+        <Typography variant="h4" fontWeight={700}>
           Properties behind {summary?.areaName ?? "this"} average
         </Typography>
-
-        <Box display="flex" gap={1}>
-          <Button component={Link} href="/" variant="outlined">
-            Dashboard
-          </Button>
-          <Button component={Link} href="/properties" variant="outlined">
-            Properties
-          </Button>
-          <Button component={Link} href="/areas" variant="outlined">
-            Areas
-          </Button>
-          <LogoutButton />
-        </Box>
       </Box>
 
       {summary && (
@@ -343,6 +330,7 @@ export default function ContributingListingsPage() {
           </Typography>
         )
       )}
+      </Box>
     </Box>
   );
 }
