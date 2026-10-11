@@ -1,25 +1,12 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import {
   Paper,
   TablePagination,
   Typography,
   Box,
   CircularProgress,
-  Button,
-  Divider,
-  FormControlLabel,
-  Switch,
-  Checkbox,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
-  FormHelperText,
-  OutlinedInput,
-  Chip,
 } from "@mui/material";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
@@ -30,17 +17,22 @@ import {
   type UpdatePropertyPayload,
 } from "@/api/properties";
 import { areasApi, type Area } from "@/api/areas";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs, { Dayjs } from "dayjs";
-import { LogoutButton } from "@/app/LogoutButton";
-import { PropertyTable, type PropertyTableItem } from "@/components/PropertyTable";
+import { AppHeader, WARM_BG, BORDER } from "@/components/AppHeader";
+import {
+  PropertiesFilterBar,
+  type FurnishedFilter,
+  type PropertyFilters,
+} from "@/components/PropertiesFilterBar";
+import {
+  PropertyTable,
+  type PropertyTableItem,
+} from "@/components/PropertyTable";
 
 const PROPERTY_TYPES_STORAGE_KEY = "propertyTypes";
 const AREA_IDS_STORAGE_KEY = "areaIds";
 const SOURCES_STORAGE_KEY = "sources";
 const FURNISHED_STORAGE_KEY = "furnished";
-
-type FurnishedFilter = "any" | "yes" | "no";
 
 export default function PropertiesPage() {
   const router = useRouter();
@@ -60,7 +52,9 @@ export default function PropertiesPage() {
   const [propertyTypes, setPropertyTypes] = React.useState<PropertyType[]>([]);
   const [areas, setAreas] = React.useState<Area[]>([]);
   const [areaIds, setAreaIds] = React.useState<number[]>([]);
-  const [sourceOptions, setSourceOptions] = React.useState<PropertySourceOption[]>([]);
+  const [sourceOptions, setSourceOptions] = React.useState<
+    PropertySourceOption[]
+  >([]);
   const [sourcesLoading, setSourcesLoading] = React.useState(true);
   const [sourcesError, setSourcesError] = React.useState<string | null>(null);
   const [sources, setSources] = React.useState<string[]>([]);
@@ -114,11 +108,15 @@ export default function PropertiesPage() {
 
   const handleRetryAiMetadata = async (propertyId: number) => {
     try {
-      const updatedProperty = await propertiesApi.extractAiMetadata({ propertyId });
+      const updatedProperty = await propertiesApi.extractAiMetadata({
+        propertyId,
+      });
 
       setProducts((prev) =>
         prev.map((property) =>
-          property.id === propertyId ? { ...property, ...updatedProperty } : property,
+          property.id === propertyId
+            ? { ...property, ...updatedProperty }
+            : property,
         ),
       );
     } catch (err) {
@@ -127,7 +125,10 @@ export default function PropertiesPage() {
   };
 
   React.useEffect(() => {
-    areasApi.getAreas().then(setAreas).catch(() => setAreas([]));
+    areasApi
+      .getAreas()
+      .then(setAreas)
+      .catch(() => setAreas([]));
   }, []);
 
   React.useEffect(() => {
@@ -147,7 +148,9 @@ export default function PropertiesPage() {
     const storedFromDate = localStorage.getItem("fromDate");
     const storedToDate = localStorage.getItem("toDate");
     const storedRowsPerPage = localStorage.getItem("rowsPerPage");
-    const storedPropertyTypes = localStorage.getItem(PROPERTY_TYPES_STORAGE_KEY);
+    const storedPropertyTypes = localStorage.getItem(
+      PROPERTY_TYPES_STORAGE_KEY,
+    );
     const storedAreaIds = localStorage.getItem(AREA_IDS_STORAGE_KEY);
     const storedSources = localStorage.getItem(SOURCES_STORAGE_KEY);
     const storedFurnished = localStorage.getItem(FURNISHED_STORAGE_KEY);
@@ -191,7 +194,9 @@ export default function PropertiesPage() {
 
         if (Array.isArray(parsed)) {
           setSources(
-            parsed.filter((value): value is string => typeof value === "string"),
+            parsed.filter(
+              (value): value is string => typeof value === "string",
+            ),
           );
         }
       } catch {
@@ -332,19 +337,54 @@ export default function PropertiesPage() {
     updateUrl(0);
   };
 
-  const filterByDay = (date: Dayjs) => {
-    setFromDate(date.startOf("day"));
-    setToDate(date.endOf("day"));
+  const filters: PropertyFilters = {
+    fromDate,
+    toDate,
+    propertyTypes,
+    areaIds,
+    sources,
+    furnished,
+    onlyUnseen,
+    onlyBookmarked,
+    onlyPriceChanged,
+    onlyUntyped,
+    onlyUnresolved,
+  };
+
+  const handleFiltersChange = (patch: Partial<PropertyFilters>) => {
+    if ("fromDate" in patch) setFromDate(patch.fromDate ?? null);
+    if ("toDate" in patch) setToDate(patch.toDate ?? null);
+    if (patch.propertyTypes) setPropertyTypes(patch.propertyTypes);
+    if (patch.areaIds) setAreaIds(patch.areaIds);
+    if (patch.sources) setSources(patch.sources);
+    if (patch.furnished) setFurnished(patch.furnished);
+    if (patch.onlyUnseen !== undefined) setOnlyUnseen(patch.onlyUnseen);
+    if (patch.onlyBookmarked !== undefined)
+      setOnlyBookmarked(patch.onlyBookmarked);
+    if (patch.onlyPriceChanged !== undefined)
+      setOnlyPriceChanged(patch.onlyPriceChanged);
+    if (patch.onlyUntyped !== undefined) setOnlyUntyped(patch.onlyUntyped);
+    if (patch.onlyUnresolved !== undefined)
+      setOnlyUnresolved(patch.onlyUnresolved);
     setPage(0);
     updateUrl(0);
   };
 
-  const today = dayjs();
-  const yesterday = today.subtract(1, "day");
-  const isDaySelected = (date: Dayjs) =>
-    Boolean(
-      fromDate?.isSame(date, "day") && toDate?.isSame(date, "day"),
-    );
+  const handleClearFilters = () => {
+    setFromDate(null);
+    setToDate(null);
+    setPropertyTypes([]);
+    setAreaIds([]);
+    setSources([]);
+    setFurnished("any");
+    setOnlyUnseen(false);
+    setOnlyBookmarked(false);
+    setOnlyPriceChanged(false);
+    setOnlyUntyped(false);
+    setOnlyUnresolved(false);
+    setPage(0);
+    updateUrl(0);
+  };
 
   if (error) {
     return (
@@ -355,336 +395,53 @@ export default function PropertiesPage() {
   }
 
   return (
-    <Box p={3}>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        gap={2}
-        mb={2}
-      >
-        <Typography variant="h5" fontWeight={600}>
-          Properties
-        </Typography>
-        <Box display="flex" gap={1} alignItems="center">
-          <Button component={Link} href="/" variant="outlined">
-            Dashboard
-          </Button>
-          <Button component={Link} href="/areas" variant="outlined">
-            Areas
-          </Button>
-          <Button component={Link} href="/settings" variant="outlined">
-            Settings
-          </Button>
-          <LogoutButton />
-        </Box>
-      </Box>
-      <Box mb={2} display="flex" gap={2} alignItems="center" flexWrap="wrap">
-        <Button
-          variant={isDaySelected(today) ? "contained" : "outlined"}
-          onClick={() => filterByDay(today)}
-        >
-          Today&apos;s properties
-        </Button>
-
-        <Button
-          variant={isDaySelected(yesterday) ? "contained" : "outlined"}
-          onClick={() => filterByDay(yesterday)}
-        >
-          Yesterday&apos;s properties
-        </Button>
-
-        <DatePicker
-          label="From date"
-          value={fromDate}
-          onChange={(newValue) => {
-            setFromDate(newValue);
-            setPage(0);
-            updateUrl(0);
+    <Box sx={{ minHeight: "100vh", bgcolor: WARM_BG }}>
+      <AppHeader />
+      <Box p={3}>
+        <PropertiesFilterBar
+          filters={filters}
+          areas={areas}
+          sourceOptions={sourceOptions}
+          sourcesLoading={sourcesLoading}
+          sourcesError={sourcesError}
+          onChange={handleFiltersChange}
+          onClear={handleClearFilters}
+        />
+        <Paper
+          elevation={1}
+          sx={{
+            borderRadius: 2,
+            border: "1px solid",
+            borderColor: BORDER,
+            backgroundColor: "#fff",
           }}
-          slotProps={{ textField: { size: "small" } }}
-        />
-
-        <DatePicker
-          label="To date"
-          value={toDate}
-          onChange={(newValue) => {
-            setToDate(newValue);
-            setPage(0);
-            updateUrl(0);
-          }}
-          slotProps={{ textField: { size: "small" } }}
-        />
-
-        <FormControl size="small" sx={{ minWidth: 240 }} disabled={onlyUntyped}>
-          <InputLabel id="property-types-label">Property types</InputLabel>
-          <Select
-            labelId="property-types-label"
-            multiple
-            value={propertyTypes}
-            onChange={(event) => {
-              const value = event.target.value;
-              setPropertyTypes(
-                typeof value === "string" ? (value.split(",") as PropertyType[]) : value,
-              );
-              setPage(0);
-              updateUrl(0);
-            }}
-            input={<OutlinedInput label="Property types" />}
-            renderValue={(selected) => (
-              <Box display="flex" gap={0.5} flexWrap="wrap">
-                {selected.map((value) => (
-                  <Chip key={value} label={value} size="small" />
-                ))}
-              </Box>
-            )}
-          >
-            {PROPERTY_TYPES.map((propertyType) => (
-              <MenuItem key={propertyType} value={propertyType}>
-                {propertyType}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={onlyUntyped}
-              onChange={(e) => {
-                const checked = e.target.checked;
-
-                setOnlyUntyped(checked);
-                if (checked) {
-                  setPropertyTypes([]);
-                }
-                setPage(0);
-                updateUrl(0);
-              }}
-            />
-          }
-          label="Only untyped"
-        />
-
-        <FormControl size="small" sx={{ minWidth: 200 }} disabled={onlyUnresolved}>
-          <InputLabel id="areas-label">Area</InputLabel>
-          <Select
-            labelId="areas-label"
-            multiple
-            value={areaIds}
-            onChange={(event) => {
-              const value = event.target.value;
-              setAreaIds(
-                typeof value === "string"
-                  ? value.split(",").map(Number)
-                  : value,
-              );
-              setPage(0);
-              updateUrl(0);
-            }}
-            input={<OutlinedInput label="Area" />}
-            renderValue={(selected) => (
-              <Box display="flex" gap={0.5} flexWrap="wrap">
-                {selected.map((id) => (
-                  <Chip
-                    key={id}
-                    label={areas.find((area) => area.id === id)?.name ?? id}
-                    size="small"
-                  />
-                ))}
-              </Box>
-            )}
-          >
-            {areas.map((area) => (
-              <MenuItem key={area.id} value={area.id}>
-                {area.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={onlyUnresolved}
-              onChange={(e) => {
-                const checked = e.target.checked;
-
-                setOnlyUnresolved(checked);
-                if (checked) {
-                  setAreaIds([]);
-                }
-                setPage(0);
-                updateUrl(0);
-              }}
-            />
-          }
-          label="Only missing area"
-        />
-
-        <FormControl
-          size="small"
-          sx={{ minWidth: 200 }}
-          disabled={sourcesLoading || Boolean(sourcesError)}
-          error={Boolean(sourcesError)}
         >
-          <InputLabel id="sources-label">Source</InputLabel>
-          <Select
-            labelId="sources-label"
-            multiple
-            value={sources}
-            onChange={(event) => {
-              const value = event.target.value;
-              setSources(typeof value === "string" ? value.split(",") : value);
-              setPage(0);
-              updateUrl(0);
-            }}
-            input={<OutlinedInput label="Source" />}
-            renderValue={(selected) => (
-              <Box display="flex" gap={0.5} flexWrap="wrap">
-                {selected.map((value) => (
-                  <Chip
-                    key={value}
-                    label={
-                      sourceOptions.find((option) => option.value === value)
-                        ?.label ?? value
-                    }
-                    size="small"
-                  />
-                ))}
-              </Box>
-            )}
-          >
-            {sourceOptions.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </Select>
-          {sourcesLoading && <FormHelperText>Loading sources…</FormHelperText>}
-          {sourcesError && <FormHelperText>{sourcesError}</FormHelperText>}
-        </FormControl>
+          {loading ? (
+            <Box p={3} textAlign="center">
+              <CircularProgress />
+              <Typography mt={2}>Loading products...</Typography>
+            </Box>
+          ) : (
+            <PropertyTable
+              properties={products}
+              onBookmark={handleBookmark}
+              onRetryAiMetadata={handleRetryAiMetadata}
+              areas={areas}
+              onUpdateProperty={handleUpdateProperty}
+            />
+          )}
 
-        <FormControl size="small" sx={{ minWidth: 140 }}>
-          <InputLabel id="furnished-label">Furnished</InputLabel>
-          <Select
-            labelId="furnished-label"
-            value={furnished}
-            label="Furnished"
-            onChange={(event) => {
-              setFurnished(event.target.value as FurnishedFilter);
-              setPage(0);
-              updateUrl(0);
-            }}
-          >
-            <MenuItem value="any">Any</MenuItem>
-            <MenuItem value="yes">Yes</MenuItem>
-            <MenuItem value="no">No</MenuItem>
-          </Select>
-        </FormControl>
-
-        {(fromDate ||
-          toDate ||
-          propertyTypes.length > 0 ||
-          areaIds.length > 0 ||
-          sources.length > 0 ||
-          furnished !== "any" ||
-          onlyUntyped ||
-          onlyUnresolved) && (
-          <Button
-            size="small"
-            variant="outlined"
-            onClick={() => {
-              setFromDate(null);
-              setToDate(null);
-              setPropertyTypes([]);
-              setAreaIds([]);
-              setSources([]);
-              setFurnished("any");
-              setOnlyUntyped(false);
-              setOnlyUnresolved(false);
-              setPage(0);
-              updateUrl(0);
-            }}
-          >
-            Clear
-          </Button>
-        )}
-        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-        <FormControlLabel
-          control={
-            <Switch
-              checked={onlyUnseen}
-              onChange={(e) => {
-                setOnlyUnseen(e.target.checked);
-                setPage(0);
-                updateUrl(0);
-              }}
-            />
-          }
-          label="Only unseen"
-        />
-        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-        <FormControlLabel
-          control={
-            <Switch
-              checked={onlyBookmarked}
-              onChange={(e) => {
-                setOnlyBookmarked(e.target.checked);
-                setPage(0);
-                updateUrl(0);
-              }}
-            />
-          }
-          label="Only bookmarked"
-        />
-        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-        <FormControlLabel
-          control={
-            <Switch
-              checked={onlyPriceChanged}
-              onChange={(e) => {
-                setOnlyPriceChanged(e.target.checked);
-                setPage(0);
-                updateUrl(0);
-              }}
-            />
-          }
-          label="Only price changed"
-        />
-      </Box>
-      <Paper
-        elevation={1}
-        sx={{
-          borderRadius: 2,
-          border: "1px solid",
-          borderColor: "divider",
-          backgroundColor: "#fff",
-        }}
-      >
-        {loading ? (
-          <Box p={3} textAlign="center">
-            <CircularProgress />
-            <Typography mt={2}>Loading products...</Typography>
-          </Box>
-        ) : (
-          <PropertyTable
-            properties={products}
-            onBookmark={handleBookmark}
-            onRetryAiMetadata={handleRetryAiMetadata}
-            areas={areas}
-            onUpdateProperty={handleUpdateProperty}
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25]}
+            component="div"
+            count={totalProducts}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
           />
-        )}
-
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={totalProducts}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
-      </Paper>
+        </Paper>
+      </Box>
     </Box>
   );
 }
