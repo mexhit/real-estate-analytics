@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import {
   Alert,
   Box,
@@ -20,7 +19,7 @@ import {
   settingsApi,
   type AiProviderType,
 } from "@/api/settings";
-import { LogoutButton } from "@/app/LogoutButton";
+import { AppHeader, WARM_BG } from "@/components/AppHeader";
 
 function extractErrorMessage(err: unknown, fallback: string): string {
   if (isAxiosError(err)) {
@@ -84,7 +83,9 @@ export default function SettingsPage() {
   }
 
   return (
-    <Box p={3}>
+    <Box sx={{ minHeight: "100vh", bgcolor: WARM_BG }}>
+      <AppHeader />
+      <Box p={3}>
       <Box
         display="flex"
         justifyContent="space-between"
@@ -92,21 +93,9 @@ export default function SettingsPage() {
         gap={2}
         mb={2}
       >
-        <Typography variant="h5" fontWeight={600}>
+        <Typography variant="h4" fontWeight={700}>
           Settings
         </Typography>
-        <Box display="flex" gap={1} alignItems="center">
-          <Button component={Link} href="/" variant="outlined">
-            Dashboard
-          </Button>
-          <Button component={Link} href="/properties" variant="outlined">
-            Properties
-          </Button>
-          <Button component={Link} href="/areas" variant="outlined">
-            Areas
-          </Button>
-          <LogoutButton />
-        </Box>
       </Box>
 
       <Paper
@@ -175,6 +164,7 @@ export default function SettingsPage() {
           </Box>
         )}
       </Paper>
+      </Box>
     </Box>
   );
 }

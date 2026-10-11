@@ -35,7 +35,7 @@ import dayjs from "dayjs";
 import { isAxiosError } from "axios";
 import { areasApi, type Area } from "@/api/areas";
 import { jobsApi, type AreaPriceSnapshotJobResult } from "@/api/jobs";
-import { LogoutButton } from "@/app/LogoutButton";
+import { AppHeader, WARM_BG } from "@/components/AppHeader";
 
 function extractErrorMessage(err: unknown, fallback: string): string {
   if (isAxiosError(err)) {
@@ -222,7 +222,9 @@ export default function AreasPage() {
   }
 
   return (
-    <Box p={3}>
+    <Box sx={{ minHeight: "100vh", bgcolor: WARM_BG }}>
+      <AppHeader />
+      <Box p={3}>
       <Box
         display="flex"
         justifyContent="space-between"
@@ -230,21 +232,9 @@ export default function AreasPage() {
         gap={2}
         mb={2}
       >
-        <Typography variant="h5" fontWeight={600}>
+        <Typography variant="h4" fontWeight={700}>
           Areas
         </Typography>
-        <Box display="flex" gap={1} alignItems="center">
-          <Button component={Link} href="/" variant="outlined">
-            Dashboard
-          </Button>
-          <Button component={Link} href="/properties" variant="outlined">
-            Properties
-          </Button>
-          <Button component={Link} href="/settings" variant="outlined">
-            Settings
-          </Button>
-          <LogoutButton />
-        </Box>
       </Box>
 
       <Paper
@@ -565,6 +555,7 @@ export default function AreasPage() {
           </DialogActions>
         </Box>
       </Dialog>
+      </Box>
     </Box>
   );
 }

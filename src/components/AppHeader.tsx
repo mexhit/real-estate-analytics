@@ -11,8 +11,8 @@ export const BORDER = "#e4e0d8";
 export const ACCENT = "#0f6b57";
 
 const NAV_ITEMS = [
-  { label: "Properties", href: "/properties" },
   { label: "Dashboard", href: "/" },
+  { label: "Properties", href: "/properties" },
   { label: "Areas", href: "/areas" },
   { label: "Settings", href: "/settings" },
 ];

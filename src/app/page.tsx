@@ -18,7 +18,7 @@ import {
   PROPERTY_TYPES,
   type NewPropertySeriesPoint,
 } from "@/api/properties";
-import { LogoutButton } from "@/app/LogoutButton";
+import { AppHeader } from "@/components/AppHeader";
 import {
   PropertyTable,
   type PropertyTableItem,
@@ -199,6 +199,8 @@ export default function DashboardPage() {
   }
 
   return (
+    <>
+    <AppHeader />
     <Box
       p={{ xs: 2, md: 3 }}
       sx={{
@@ -222,18 +224,6 @@ export default function DashboardPage() {
           <Typography variant="body2" color="text.secondary" mt={0.5}>
             Track today&apos;s new listings and price movement in one view.
           </Typography>
-        </Box>
-        <Box display="flex" gap={1} alignItems="center">
-          <Button component={Link} href="/properties" variant="outlined">
-            Properties
-          </Button>
-          <Button component={Link} href="/areas" variant="outlined">
-            Areas
-          </Button>
-          <Button component={Link} href="/settings" variant="outlined">
-            Settings
-          </Button>
-          <LogoutButton />
         </Box>
       </Box>
 
@@ -529,5 +519,6 @@ export default function DashboardPage() {
         />
       </Box>
     </Box>
+    </>
   );
 }
