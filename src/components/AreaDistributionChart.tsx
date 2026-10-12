@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { Alert, Box, Paper, Skeleton, Stack, Typography } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { PieChart } from "@mui/x-charts/PieChart";
@@ -33,7 +32,6 @@ function toSlices(points: AreaDistributionPoint[]): Slice[] {
 }
 
 export function AreaDistributionChart() {
-  const router = useRouter();
   const [fromDate, setFromDate] = React.useState<Dayjs | null>(() =>
     dayjs().startOf("day"),
   );
@@ -84,7 +82,7 @@ export function AreaDistributionChart() {
     if (fromDate)
       params.set("fromDate", String(fromDate.startOf("day").valueOf()));
     if (toDate) params.set("toDate", String(toDate.endOf("day").valueOf()));
-    router.push(`/properties?${params.toString()}`);
+    window.open(`/properties?${params.toString()}`, "_blank", "noopener");
   };
 
   return (
