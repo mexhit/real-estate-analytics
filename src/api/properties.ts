@@ -63,6 +63,12 @@ export interface NewPropertySeriesPoint {
   count: number;
 }
 
+export interface AreaDistributionPoint {
+  areaId: number | null;
+  name: string | null;
+  count: number;
+}
+
 export interface GetPaginatedPropertiesParams {
   limit: number;
   page: number;
@@ -110,6 +116,15 @@ class PropertiesApi {
     return apiClient
       .get("/properties/analytics/new-properties")
       .then((response: { data: NewPropertySeriesPoint[] }) => response.data);
+  }
+
+  getAreaDistribution(params: {
+    fromDate?: number;
+    toDate?: number;
+  }): Promise<AreaDistributionPoint[]> {
+    return apiClient
+      .get("/properties/analytics/area-distribution", { params })
+      .then((response: { data: AreaDistributionPoint[] }) => response.data);
   }
 
   getPaginatedProperties(

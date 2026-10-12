@@ -23,6 +23,7 @@ import {
   PropertyTable,
   type PropertyTableItem,
 } from "@/components/PropertyTable";
+import { AreaDistributionChart } from "@/components/AreaDistributionChart";
 import { NewPropertiesChart } from "@/components/NewPropertiesChart";
 
 interface DashboardMetric {
@@ -47,9 +48,6 @@ export default function DashboardPage() {
   const [todayApartment31Total, setTodayApartment31Total] = React.useState(0);
   const [todayApartment31Properties, setTodayApartment31Properties] =
     React.useState<PropertyTableItem[]>([]);
-  const [todayBookmarkedTotal, setTodayBookmarkedTotal] = React.useState(0);
-  const [todayBookmarkedProperties, setTodayBookmarkedProperties] =
-    React.useState<PropertyTableItem[]>([]);
 
   const handleBookmark = async (propertyId: number) => {
     const updateCollection = (items: PropertyTableItem[]) =>
@@ -61,12 +59,10 @@ export default function DashboardPage() {
 
     const currentProperty =
       todayPriceChangedProperties.find((item) => item.id === propertyId) ||
-      todayApartment31Properties.find((item) => item.id === propertyId) ||
-      todayBookmarkedProperties.find((item) => item.id === propertyId);
+      todayApartment31Properties.find((item) => item.id === propertyId);
 
     setTodayPriceChangedProperties((prev) => updateCollection(prev));
     setTodayApartment31Properties((prev) => updateCollection(prev));
-    setTodayBookmarkedProperties((prev) => updateCollection(prev));
 
     await propertiesApi.bookmarkProperty({
       propertyId,
@@ -86,7 +82,6 @@ export default function DashboardPage() {
 
       setTodayPriceChangedProperties((prev) => updateCollection(prev));
       setTodayApartment31Properties((prev) => updateCollection(prev));
-      setTodayBookmarkedProperties((prev) => updateCollection(prev));
     } catch (err) {
       setError((err as Error).message);
     }
@@ -115,7 +110,6 @@ export default function DashboardPage() {
           todayRes,
           todayPriceChangedRes,
           todayApartment31Res,
-          todayBookmarkedRes,
         ] = await Promise.all([
           propertiesApi.getPaginatedProperties({
             limit: 1,
@@ -137,13 +131,6 @@ export default function DashboardPage() {
             toDate: todayEnd,
             propertyTypes: [PROPERTY_TYPES[2]],
           }),
-          propertiesApi.getPaginatedProperties({
-            limit: 8,
-            page: 1,
-            fromDate: todayStart,
-            toDate: todayEnd,
-            onlyBookmarked: true,
-          }),
         ]);
 
         setTodayPostedTotal(todayRes.total);
@@ -151,8 +138,6 @@ export default function DashboardPage() {
         setTodayPriceChangedProperties(todayPriceChangedRes.data);
         setTodayApartment31Total(todayApartment31Res.total);
         setTodayApartment31Properties(todayApartment31Res.data);
-        setTodayBookmarkedTotal(todayBookmarkedRes.total);
-        setTodayBookmarkedProperties(todayBookmarkedRes.data);
       } catch (err) {
         setError((err as Error).message);
       } finally {
@@ -454,61 +439,9 @@ export default function DashboardPage() {
         )}
       </Paper>
 
-      <Paper
-        elevation={0}
-        sx={{
-          mt: 3,
-          borderRadius: 2,
-          border: "1px solid rgba(148, 163, 184, 0.22)",
-          backgroundColor: "rgba(255,255,255,0.9)",
-          overflow: "hidden",
-        }}
-      >
-        <Box
-          px={2.5}
-          py={2}
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          gap={2}
-          flexWrap="wrap"
-        >
-          <Box>
-            <Typography variant="h6" fontWeight={700}>
-              Bookmarked properties posted today
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Today&apos;s listings you have already marked for follow-up.
-            </Typography>
-          </Box>
-          <Chip
-            label={
-              loading
-                ? "Loading..."
-                : `${todayBookmarkedTotal} bookmarked today`
-            }
-            sx={{ borderRadius: 2 }}
-          />
-        </Box>
-
-        {loading ? (
-          <Box p={3} textAlign="center">
-            <CircularProgress size={24} />
-          </Box>
-        ) : todayBookmarkedProperties.length === 0 ? (
-          <Box px={2.5} py={3}>
-            <Typography color="text.secondary">
-              No bookmarked properties were posted today.
-            </Typography>
-          </Box>
-        ) : (
-          <PropertyTable
-            properties={todayBookmarkedProperties}
-            onBookmark={handleBookmark}
-            onRetryAiMetadata={handleRetryAiMetadata}
-          />
-        )}
-      </Paper>
+      <Box mt={3}>
+        <AreaDistributionChart />
+      </Box>
 
       <Box mt={3}>
         <NewPropertiesChart
