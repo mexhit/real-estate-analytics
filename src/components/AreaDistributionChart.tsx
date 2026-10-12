@@ -2,14 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import {
-  Alert,
-  Box,
-  Paper,
-  Skeleton,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Alert, Box, Paper, Skeleton, Stack, Typography } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { PieChart } from "@mui/x-charts/PieChart";
 import dayjs, { type Dayjs } from "dayjs";
@@ -81,10 +74,17 @@ export function AreaDistributionChart() {
   const percent = (value: number) =>
     total > 0 ? `${((value / total) * 100).toFixed(1)}%` : "0%";
 
-  const openArea = (slice: Slice) => {
-    if (slice.areaId !== null) {
-      router.push(`/areas/${slice.areaId}/contributing-listings`);
+  const openSlice = (slice: Slice) => {
+    const params = new URLSearchParams();
+    if (slice.areaId === null) {
+      params.set("unresolved", "true");
+    } else {
+      params.set("areaId", String(slice.areaId));
     }
+    if (fromDate)
+      params.set("fromDate", String(fromDate.startOf("day").valueOf()));
+    if (toDate) params.set("toDate", String(toDate.endOf("day").valueOf()));
+    router.push(`/properties?${params.toString()}`);
   };
 
   return (
@@ -112,7 +112,7 @@ export function AreaDistributionChart() {
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {loading ? "Loading..." : `${total} listings`}
-            {" · click an area to open its price-snapshot listings"}
+            {" · click an area to see its listings"}
           </Typography>
         </Box>
         <Stack direction="row" spacing={1.5}>
@@ -169,13 +169,12 @@ export function AreaDistributionChart() {
                   outerRadius: 220,
                   paddingAngle: 0.5,
                   highlightScope: { fade: "global", highlight: "item" },
-                  valueFormatter: ({ value }) =>
-                    `${value} (${percent(value)})`,
+                  valueFormatter: ({ value }) => `${value} (${percent(value)})`,
                 },
               ]}
               onItemClick={(_, identifier) => {
                 const slice = slices[identifier.dataIndex];
-                if (slice) openArea(slice);
+                if (slice) openSlice(slice);
               }}
             />
           </Box>
@@ -183,7 +182,7 @@ export function AreaDistributionChart() {
             {slices.map((slice) => (
               <Box
                 key={slice.id}
-                onClick={() => openArea(slice)}
+                onClick={() => openSlice(slice)}
                 display="flex"
                 alignItems="center"
                 gap={1}
@@ -191,13 +190,8 @@ export function AreaDistributionChart() {
                 py={0.75}
                 sx={{
                   borderRadius: 1,
-                  cursor: slice.areaId === null ? "default" : "pointer",
-                  "&:hover": {
-                    bgcolor:
-                      slice.areaId === null
-                        ? "transparent"
-                        : "rgba(148, 163, 184, 0.14)",
-                  },
+                  cursor: "pointer",
+                  "&:hover": { bgcolor: "rgba(148, 163, 184, 0.14)" },
                 }}
               >
                 <Box

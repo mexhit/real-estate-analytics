@@ -206,7 +206,28 @@ export default function PropertiesPage() {
     if (storedFurnished === "yes" || storedFurnished === "no") {
       setFurnished(storedFurnished);
     }
+    const linkedAreaId = searchParams.get("areaId");
+    const linkedUnresolved = searchParams.get("unresolved") === "true";
+    if (linkedAreaId || linkedUnresolved) {
+      // Arriving from a Dashboard chart click: show exactly that slice, so
+      // drop every stored filter except the chart's date range.
+      const linkedFrom = searchParams.get("fromDate");
+      const linkedTo = searchParams.get("toDate");
+      setFromDate(linkedFrom ? dayjs(Number(linkedFrom)) : null);
+      setToDate(linkedTo ? dayjs(Number(linkedTo)) : null);
+      setPropertyTypes([]);
+      setAreaIds(linkedAreaId ? [Number(linkedAreaId)] : []);
+      setSources([]);
+      setFurnished("any");
+      setOnlyUnseen(false);
+      setOnlyBookmarked(false);
+      setOnlyPriceChanged(false);
+      setOnlyUntyped(false);
+      setOnlyUnresolved(linkedUnresolved);
+      router.replace("/properties");
+    }
     setPreferencesLoaded(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   React.useEffect(() => {
