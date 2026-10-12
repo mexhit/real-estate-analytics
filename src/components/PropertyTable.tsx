@@ -18,6 +18,7 @@ import {
   Typography,
 } from "@mui/material";
 import {
+  AccessTime,
   AutoFixHigh,
   CalendarTodayOutlined,
   Check,
@@ -130,18 +131,28 @@ function parsePriceToNumber(price: string | null | undefined): number | null {
   return Number(numeric);
 }
 
-function formatListedAge(date: number | string | null | undefined): string {
-  if (date == null) return "";
+function formatPeriod(
+  from: string | Date | null | undefined,
+  to: string | Date | null | undefined,
+): string {
+  const start = dayjs(from);
+  const end = dayjs(to);
 
-  const start = dayjs(date);
+  if (!start.isValid() || !end.isValid()) return "-";
 
-  if (!start.isValid()) return "";
+  const days = end.diff(start, "day");
 
-  const days = dayjs().startOf("day").diff(start.startOf("day"), "day");
+  if (days < 7) {
+    return `${days} day${days !== 1 ? "s" : ""}`;
+  }
 
-  if (days <= 0) return "Today";
+  if (days < 30) {
+    const weeks = Math.floor(days / 7);
+    return `${weeks} week${weeks !== 1 ? "s" : ""}`;
+  }
 
-  return `${days} day${days !== 1 ? "s" : ""}`;
+  const months = Math.floor(days / 30);
+  return `${months} month${months !== 1 ? "s" : ""}`;
 }
 
 function getPricePositionInfo(
@@ -396,27 +407,37 @@ export function PropertyTable({
                           Unfurnished
                         </Typography>
                       )}
-                      <Tooltip
-                        title={`Active from ${formatDate(
-                          property.firstPostedAt,
-                        )} to ${formatDate(property.lastPostedAt)}`}
-                        arrow
+                      <Box
+                        sx={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 0.5,
+                          color: "text.secondary",
+                        }}
                       >
-                        <Box
-                          sx={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 0.5,
-                            color: "text.secondary",
-                          }}
+                        <CalendarTodayOutlined sx={{ fontSize: 16 }} />
+                        <Typography variant="body2" color="text.secondary">
+                          Listed {formatDate(property.createdAt)}
+                        </Typography>
+                      </Box>
+                      {showProviderHistory && (
+                        <Tooltip
+                          title={`From ${formatDate(
+                            property.firstPostedAt,
+                          )} to ${formatDate(property.lastPostedAt)}`}
+                          arrow
                         >
-                          <CalendarTodayOutlined sx={{ fontSize: 16 }} />
-                          <Typography variant="body2" color="text.secondary">
-                            Listed {formatDate(property.createdAt)} ·{" "}
-                            {formatListedAge(property.createdAt)}
-                          </Typography>
-                        </Box>
-                      </Tooltip>
+                          <Chip
+                            icon={<AccessTime />}
+                            label={`Active ${formatPeriod(
+                              property.firstPostedAt,
+                              property.lastPostedAt,
+                            )}`}
+                            size="small"
+                            sx={{ fontWeight: 600 }}
+                          />
+                        </Tooltip>
+                      )}
                       {showProviderHistory && repostCount > 1 && (
                         <Link
                           href={`/providers/${property.providerId}`}
