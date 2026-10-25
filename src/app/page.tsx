@@ -11,13 +11,19 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { Today } from "@mui/icons-material";
+import { ArrowDownward, ArrowUpward, Today } from "@mui/icons-material";
 import dayjs from "dayjs";
 import {
   propertiesApi,
   PROPERTY_TYPES,
   type NewPropertySeriesPoint,
 } from "@/api/properties";
+import {
+  exchangeRatesApi,
+  type LatestExchangeRate,
+  type LatestExchangeRates,
+  type RateTrend,
+} from "@/api/exchange-rates";
 import { AppHeader, WARM_BG } from "@/components/AppHeader";
 import {
   PropertyTable,
@@ -27,10 +33,29 @@ import { AreaDistributionChart } from "@/components/AreaDistributionChart";
 import { NewPropertiesChart } from "@/components/NewPropertiesChart";
 
 interface DashboardMetric {
-  kind: "new-properties" | "price-changes" | "change-rate";
+  kind: "new-properties" | "exchange-rate";
   label: string;
   value: string;
   accent: string;
+  rate?: LatestExchangeRate;
+}
+
+// Lek getting weaker (rate up) is shown red, stronger (rate down) green.
+const TREND_COLORS: Record<RateTrend, string> = {
+  up: "#b91c1c",
+  down: "#15803d",
+  unchanged: "#64748b",
+  none: "#64748b",
+};
+
+function TrendArrow({ trend }: { trend: RateTrend }) {
+  if (trend === "up") {
+    return <ArrowUpward sx={{ fontSize: 22, color: TREND_COLORS.up }} />;
+  }
+  if (trend === "down") {
+    return <ArrowDownward sx={{ fontSize: 22, color: TREND_COLORS.down }} />;
+  }
+  return null;
 }
 
 export default function DashboardPage() {
@@ -41,7 +66,10 @@ export default function DashboardPage() {
   >([]);
   const [chartLoading, setChartLoading] = React.useState(true);
   const [chartError, setChartError] = React.useState<string | null>(null);
-  const [todayPostedTotal, setTodayPostedTotal] = React.useState(0);
+  const [exchangeRates, setExchangeRates] =
+    React.useState<LatestExchangeRates | null>(null);
+  const [ratesLoading, setRatesLoading] = React.useState(true);
+  const [ratesError, setRatesError] = React.useState<string | null>(null);
   const [todayPriceChangedTotal, setTodayPriceChangedTotal] = React.useState(0);
   const [todayPriceChangedProperties, setTodayPriceChangedProperties] =
     React.useState<PropertyTableItem[]>([]);
@@ -100,6 +128,18 @@ export default function DashboardPage() {
       }
     };
 
+    const fetchExchangeRates = async () => {
+      try {
+        setRatesLoading(true);
+        setRatesError(null);
+        setExchangeRates(await exchangeRatesApi.getLatest());
+      } catch (err) {
+        setRatesError((err as Error).message);
+      } finally {
+        setRatesLoading(false);
+      }
+    };
+
     const fetchDashboard = async () => {
       const todayStart = dayjs().startOf("day").valueOf();
       const todayEnd = dayjs().endOf("day").valueOf();
@@ -107,16 +147,9 @@ export default function DashboardPage() {
       try {
         setLoading(true);
         const [
-          todayRes,
           todayPriceChangedRes,
           todayApartment31Res,
         ] = await Promise.all([
-          propertiesApi.getPaginatedProperties({
-            limit: 1,
-            page: 1,
-            fromDate: todayStart,
-            toDate: todayEnd,
-          }),
           propertiesApi.getPaginatedProperties({
             limit: 8,
             page: 1,
@@ -133,7 +166,6 @@ export default function DashboardPage() {
           }),
         ]);
 
-        setTodayPostedTotal(todayRes.total);
         setTodayPriceChangedTotal(todayPriceChangedRes.total);
         setTodayPriceChangedProperties(todayPriceChangedRes.data);
         setTodayApartment31Total(todayApartment31Res.total);
@@ -146,6 +178,7 @@ export default function DashboardPage() {
     };
 
     void fetchNewPropertySeries();
+    void fetchExchangeRates();
     void fetchDashboard();
   }, []);
 
@@ -158,21 +191,15 @@ export default function DashboardPage() {
       value: String(todayNewPropertyTotal),
       accent: "#0f766e",
     },
-    {
-      kind: "price-changes",
-      label: "Price changes today",
-      value: String(todayPriceChangedTotal),
-      accent: "#b45309",
-    },
-    {
-      kind: "change-rate",
-      label: "Change rate",
-      value:
-        todayPostedTotal > 0
-          ? `${Math.round((todayPriceChangedTotal / todayPostedTotal) * 100)}%`
-          : "0%",
-      accent: "#2563eb",
-    },
+    ...(["EUR", "USD"] as const).map(
+      (currency): DashboardMetric => ({
+        kind: "exchange-rate",
+        label: `${currency} / ALL`,
+        value: exchangeRates?.rates[currency]?.sell.toFixed(2) ?? "—",
+        accent: currency === "EUR" ? "#b45309" : "#2563eb",
+        rate: exchangeRates?.rates[currency],
+      }),
+    ),
   ];
 
   if (error) {
@@ -261,16 +288,40 @@ export default function DashboardPage() {
                       {chartError ? "—" : metric.value}
                     </Typography>
                   )
-                ) : loading ? (
+                ) : ratesLoading ? (
                   <CircularProgress size={22} />
                 ) : (
-                  <Typography
-                    variant="h3"
-                    fontWeight={700}
-                    sx={{ color: metric.accent, lineHeight: 1.1 }}
-                  >
-                    {metric.value}
-                  </Typography>
+                  <>
+                    <Box display="flex" alignItems="center" gap={0.5}>
+                      <Typography
+                        variant="h3"
+                        fontWeight={700}
+                        sx={{ color: metric.accent, lineHeight: 1.1 }}
+                      >
+                        {ratesError ? "—" : metric.value}
+                      </Typography>
+                      {metric.rate && <TrendArrow trend={metric.rate.sellTrend} />}
+                    </Box>
+                    {metric.rate && (
+                      <Box display="flex" alignItems="center" gap={0.5} mt={1}>
+                        <Typography variant="body2" color="text.secondary">
+                          Buy {metric.rate.buy.toFixed(2)}
+                        </Typography>
+                        <TrendArrow trend={metric.rate.buyTrend} />
+                      </Box>
+                    )}
+                    {!metric.rate && !ratesError && (
+                      <Typography variant="body2" color="text.secondary">
+                        No rate yet
+                      </Typography>
+                    )}
+                    {exchangeRates?.fetchedAt && metric.rate && (
+                      <Typography variant="caption" color="text.secondary">
+                        Updated{" "}
+                        {dayjs(exchangeRates.fetchedAt).format("MMM D, HH:mm")}
+                      </Typography>
+                    )}
+                  </>
                 )}
               </Paper>
             ))}
