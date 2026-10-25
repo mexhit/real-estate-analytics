@@ -40,6 +40,8 @@ interface DashboardMetric {
   rate?: LatestExchangeRate;
 }
 
+// The Rate Source's buy/sell are from the exchanger's side, so they are
+// swapped here: its "buy" is the rate the user sells at (headline).
 // Lek getting weaker (rate up) is shown red, stronger (rate down) green.
 const TREND_COLORS: Record<RateTrend, string> = {
   up: "#b91c1c",
@@ -195,7 +197,7 @@ export default function DashboardPage() {
       (currency): DashboardMetric => ({
         kind: "exchange-rate",
         label: `${currency} / ALL`,
-        value: exchangeRates?.rates[currency]?.sell.toFixed(2) ?? "—",
+        value: exchangeRates?.rates[currency]?.buy.toFixed(2) ?? "—",
         accent: currency === "EUR" ? "#b45309" : "#2563eb",
         rate: exchangeRates?.rates[currency],
       }),
@@ -300,14 +302,14 @@ export default function DashboardPage() {
                       >
                         {ratesError ? "—" : metric.value}
                       </Typography>
-                      {metric.rate && <TrendArrow trend={metric.rate.sellTrend} />}
+                      {metric.rate && <TrendArrow trend={metric.rate.buyTrend} />}
                     </Box>
                     {metric.rate && (
                       <Box display="flex" alignItems="center" gap={0.5} mt={1}>
                         <Typography variant="body2" color="text.secondary">
-                          Buy {metric.rate.buy.toFixed(2)}
+                          Buy {metric.rate.sell.toFixed(2)}
                         </Typography>
-                        <TrendArrow trend={metric.rate.buyTrend} />
+                        <TrendArrow trend={metric.rate.sellTrend} />
                       </Box>
                     )}
                     {!metric.rate && !ratesError && (
