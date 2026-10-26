@@ -141,7 +141,7 @@ export function ExchangeRateHistoryCard() {
         </Box>
       ) : (
         <LineChart
-          height={200}
+          height={240}
           dataset={points.map((point) => ({
             at: new Date(point.at),
             // The Rate Source's "buy" is the rate the user sells at.
@@ -150,24 +150,41 @@ export function ExchangeRateHistoryCard() {
           xAxis={[
             {
               dataKey: "at",
-              scaleType: "point",
+              scaleType: "time",
               valueFormatter: (value: Date) => dayjs(value).format(labelFormat),
             },
           ]}
-          yAxis={[{ width: 48, valueFormatter: (v: number) => v.toFixed(2) }]}
+          yAxis={[
+            {
+              width: 56,
+              valueFormatter: (v: number) => v.toFixed(2),
+              domainLimit: (min: number, max: number) => {
+                const pad = Math.max((max - min) * 0.2, 0.05);
+                return { min: min - pad, max: max + pad };
+              },
+            },
+          ]}
+          grid={{ horizontal: true }}
           series={[
             {
               dataKey: "sell",
-              color: currency === "EUR" ? "#f59e0b" : "#60a5fa",
+              color: currency === "EUR" ? "#fbbf24" : "#60a5fa",
+              curve: "stepAfter",
               showMark: points.length <= 12,
               valueFormatter: (v: number | null) => v?.toFixed(2) ?? "",
             },
           ]}
           sx={{
+            "& .MuiLineElement-root": { strokeWidth: 3 },
             "& .MuiChartsAxis-line, & .MuiChartsAxis-tick": {
               stroke: "#94a3b8",
             },
-            "& .MuiChartsAxis-tickLabel": { fill: "#cbd5e1" },
+            "& .MuiChartsAxis-tickLabel, & .MuiChartsAxis-tickLabel tspan": {
+              fill: "#e2e8f0 !important",
+            },
+            "& .MuiChartsGrid-line": {
+              stroke: "rgba(148, 163, 184, 0.25)",
+            },
           }}
           margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
         />
