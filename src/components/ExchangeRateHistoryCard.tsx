@@ -71,7 +71,7 @@ export function ExchangeRateHistoryCard() {
     <Paper
       elevation={0}
       sx={{
-        gridColumn: { xs: "1 / -1", md: "span 5" },
+        gridColumn: { xs: "1 / -1", md: "span 8" },
         p: 2.5,
         borderRadius: 2,
         border: "1px solid rgba(148, 163, 184, 0.22)",

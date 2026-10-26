@@ -240,14 +240,12 @@ export default function DashboardPage() {
             mb: 3,
           }}
         >
-          <Box sx={{ gridColumn: { xs: "1 / -1", md: "span 7" } }}>
+          <Box sx={{ gridColumn: { xs: "1 / -1", md: "span 4" } }}>
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: {
-                  xs: "1fr",
-                  sm: "repeat(3, minmax(0, 1fr))",
-                },
+                gridTemplateColumns: "1fr",
+                gridAutoRows: "1fr",
                 gap: 2,
                 height: "100%",
               }}
