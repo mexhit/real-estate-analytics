@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   Alert,
   Box,
+  ButtonBase,
   Paper,
   Skeleton,
   Stack,
@@ -11,15 +12,16 @@ import {
   ToggleButtonGroup,
   Typography,
 } from "@mui/material";
-import { ShowChart } from "@mui/icons-material";
 import { LineChart } from "@mui/x-charts/LineChart";
 import dayjs from "dayjs";
 import {
   exchangeRatesApi,
+  type LatestExchangeRates,
   type RateCurrency,
   type RateHistory,
   type RateHistoryRange,
 } from "@/api/exchange-rates";
+import { TrendArrow } from "@/components/TrendArrow";
 
 const RANGE_LABELS: Record<RateHistoryRange, string> = {
   today: "Today",
@@ -37,7 +39,22 @@ const toggleSx = {
   },
 } as const;
 
-export function ExchangeRateHistoryCard() {
+interface ExchangeRateHistoryCardProps {
+  latest: LatestExchangeRates | null;
+  latestLoading: boolean;
+  latestError: string | null;
+}
+
+const CURRENCY_ACCENT: Record<RateCurrency, string> = {
+  EUR: "#fbbf24",
+  USD: "#60a5fa",
+};
+
+export function ExchangeRateHistoryCard({
+  latest,
+  latestLoading,
+  latestError,
+}: ExchangeRateHistoryCardProps) {
   const [currency, setCurrency] = React.useState<RateCurrency>("EUR");
   const [range, setRange] = React.useState<RateHistoryRange>("today");
   const [history, setHistory] = React.useState<RateHistory | null>(null);
@@ -71,66 +88,109 @@ export function ExchangeRateHistoryCard() {
     <Paper
       elevation={0}
       sx={{
-        gridColumn: { xs: "1 / -1", md: "span 8" },
+        gridColumn: { xs: "1 / -1", md: "span 9" },
         p: 2.5,
         borderRadius: 2,
         border: "1px solid rgba(148, 163, 184, 0.22)",
         backgroundColor: "rgba(15, 23, 42, 0.94)",
         color: "#fff",
-        minHeight: 132,
       }}
     >
       <Stack
         direction="row"
         justifyContent="space-between"
-        alignItems="center"
+        alignItems="flex-start"
         flexWrap="wrap"
-        gap={1}
+        gap={1.5}
         mb={1.5}
       >
-        <Stack direction="row" spacing={1} alignItems="center">
-          <ShowChart sx={{ color: "#60a5fa" }} />
-          <Typography variant="subtitle1" fontWeight={700}>
-            {currency} / ALL sell rate
-          </Typography>
+        <Stack direction="row" gap={1.5}>
+          {(["EUR", "USD"] as const).map((value) => {
+            const rate = latest?.rates[value];
+            const selected = value === currency;
+            return (
+              <ButtonBase
+                key={value}
+                onClick={() => setCurrency(value)}
+                aria-pressed={selected}
+                sx={{
+                  display: "block",
+                  textAlign: "left",
+                  px: 2,
+                  py: 1.25,
+                  borderRadius: 2,
+                  minWidth: 150,
+                  border: "1px solid",
+                  borderColor: selected
+                    ? CURRENCY_ACCENT[value]
+                    : "rgba(148, 163, 184, 0.3)",
+                  backgroundColor: selected
+                    ? "rgba(255,255,255,0.07)"
+                    : "transparent",
+                  opacity: selected ? 1 : 0.7,
+                  "&:hover": { opacity: 1 },
+                }}
+              >
+                <Typography variant="caption" sx={{ color: "#cbd5e1" }}>
+                  {value} / ALL sell
+                </Typography>
+                {latestLoading ? (
+                  <Skeleton width={90} height={40} />
+                ) : (
+                  <Stack direction="row" alignItems="center" gap={0.5}>
+                    <Typography
+                      variant="h4"
+                      fontWeight={700}
+                      sx={{ color: CURRENCY_ACCENT[value], lineHeight: 1.2 }}
+                    >
+                      {latestError || !rate ? "—" : rate.buy.toFixed(2)}
+                    </Typography>
+                    {rate && (
+                      <TrendArrow trend={rate.buyTrend} size={20} onDark />
+                    )}
+                  </Stack>
+                )}
+                {rate && (
+                  <Stack direction="row" alignItems="center" gap={0.25}>
+                    <Typography variant="caption" sx={{ color: "#94a3b8" }}>
+                      Buy {rate.sell.toFixed(2)}
+                    </Typography>
+                    <TrendArrow trend={rate.sellTrend} size={14} onDark />
+                  </Stack>
+                )}
+              </ButtonBase>
+            );
+          })}
         </Stack>
-        <ToggleButtonGroup
-          size="small"
-          exclusive
-          value={currency}
-          onChange={(_, value: RateCurrency | null) =>
-            value && setCurrency(value)
-          }
-        >
-          {(["EUR", "USD"] as const).map((value) => (
-            <ToggleButton key={value} value={value} sx={toggleSx}>
-              {value}
-            </ToggleButton>
-          ))}
-        </ToggleButtonGroup>
+        <Stack alignItems="flex-end" gap={0.5}>
+          <ToggleButtonGroup
+            size="small"
+            exclusive
+            value={range}
+            onChange={(_, value: RateHistoryRange | null) =>
+              value && setRange(value)
+            }
+          >
+            {(Object.keys(RANGE_LABELS) as RateHistoryRange[]).map((value) => (
+              <ToggleButton key={value} value={value} sx={toggleSx}>
+                {RANGE_LABELS[value]}
+              </ToggleButton>
+            ))}
+          </ToggleButtonGroup>
+          {latest?.fetchedAt && (
+            <Typography variant="caption" sx={{ color: "#94a3b8" }}>
+              Updated {dayjs(latest.fetchedAt).format("MMM D, HH:mm")}
+            </Typography>
+          )}
+        </Stack>
       </Stack>
-      <ToggleButtonGroup
-        size="small"
-        exclusive
-        value={range}
-        onChange={(_, value: RateHistoryRange | null) =>
-          value && setRange(value)
-        }
-        sx={{ mb: 1 }}
-      >
-        {(Object.keys(RANGE_LABELS) as RateHistoryRange[]).map((value) => (
-          <ToggleButton key={value} value={value} sx={toggleSx}>
-            {RANGE_LABELS[value]}
-          </ToggleButton>
-        ))}
-      </ToggleButtonGroup>
       {error ? (
         <Alert severity="error">{error}</Alert>
       ) : loading ? (
-        <Skeleton variant="rounded" height={200} />
+        <Skeleton variant="rounded" height={150} />
       ) : points.length === 0 ? (
         <Box
-          height={200}
+          height={150}
           display="flex"
           alignItems="center"
           justifyContent="center"
@@ -141,7 +201,7 @@ export function ExchangeRateHistoryCard() {
         </Box>
       ) : (
         <LineChart
-          height={240}
+          height={150}
           dataset={points.map((point) => ({
             at: new Date(point.at),
             // The Rate Source's "buy" is the rate the user sells at.
@@ -168,7 +228,7 @@ export function ExchangeRateHistoryCard() {
           series={[
             {
               dataKey: "sell",
-              color: currency === "EUR" ? "#fbbf24" : "#60a5fa",
+              color: CURRENCY_ACCENT[currency],
               curve: "stepAfter",
               showMark: points.length <= 12,
               valueFormatter: (v: number | null) => v?.toFixed(2) ?? "",

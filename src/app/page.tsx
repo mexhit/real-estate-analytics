@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { Box, Chip, CircularProgress, Paper, Typography } from "@mui/material";
-import { ArrowDownward, ArrowUpward } from "@mui/icons-material";
 import dayjs from "dayjs";
 import {
   propertiesApi,
@@ -11,9 +10,7 @@ import {
 } from "@/api/properties";
 import {
   exchangeRatesApi,
-  type LatestExchangeRate,
   type LatestExchangeRates,
-  type RateTrend,
 } from "@/api/exchange-rates";
 import { AppHeader, WARM_BG } from "@/components/AppHeader";
 import {
@@ -23,34 +20,6 @@ import {
 import { AreaDistributionChart } from "@/components/AreaDistributionChart";
 import { ExchangeRateHistoryCard } from "@/components/ExchangeRateHistoryCard";
 import { NewPropertiesChart } from "@/components/NewPropertiesChart";
-
-interface DashboardMetric {
-  kind: "new-properties" | "exchange-rate";
-  label: string;
-  value: string;
-  accent: string;
-  rate?: LatestExchangeRate;
-}
-
-// The Rate Source's buy/sell are from the exchanger's side, so they are
-// swapped here: its "buy" is the rate the user sells at (headline).
-// Lek getting weaker (rate up) is shown red, stronger (rate down) green.
-const TREND_COLORS: Record<RateTrend, string> = {
-  up: "#b91c1c",
-  down: "#15803d",
-  unchanged: "#64748b",
-  none: "#64748b",
-};
-
-function TrendArrow({ trend }: { trend: RateTrend }) {
-  if (trend === "up") {
-    return <ArrowUpward sx={{ fontSize: 22, color: TREND_COLORS.up }} />;
-  }
-  if (trend === "down") {
-    return <ArrowDownward sx={{ fontSize: 22, color: TREND_COLORS.down }} />;
-  }
-  return null;
-}
 
 export default function DashboardPage() {
   const [loading, setLoading] = React.useState(true);
@@ -175,24 +144,6 @@ export default function DashboardPage() {
 
   const todayNewPropertyTotal = newPropertySeries.at(-1)?.count ?? 0;
 
-  const dashboardMetrics: DashboardMetric[] = [
-    {
-      kind: "new-properties",
-      label: "New properties today",
-      value: String(todayNewPropertyTotal),
-      accent: "#0f766e",
-    },
-    ...(["EUR", "USD"] as const).map(
-      (currency): DashboardMetric => ({
-        kind: "exchange-rate",
-        label: `${currency} / ALL`,
-        value: exchangeRates?.rates[currency]?.buy.toFixed(2) ?? "—",
-        accent: currency === "EUR" ? "#b45309" : "#2563eb",
-        rate: exchangeRates?.rates[currency],
-      }),
-    ),
-  ];
-
   if (error) {
     return (
       <Box p={3} textAlign="center">
@@ -240,93 +191,36 @@ export default function DashboardPage() {
             mb: 3,
           }}
         >
-          <Box sx={{ gridColumn: { xs: "1 / -1", md: "span 4" } }}>
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: "1fr",
-                gridAutoRows: "1fr",
-                gap: 2,
-                height: "100%",
-              }}
-            >
-              {dashboardMetrics.map((metric) => (
-                <Paper
-                  key={metric.label}
-                  elevation={0}
-                  sx={{
-                    p: 2.5,
-                    borderRadius: 2,
-                    border: "1px solid rgba(148, 163, 184, 0.22)",
-                    backgroundColor: "rgba(255,255,255,0.9)",
-                    minHeight: 132,
-                  }}
-                >
-                  <Typography variant="body2" color="text.secondary" mb={2}>
-                    {metric.label}
-                  </Typography>
-                  {metric.kind === "new-properties" ? (
-                    chartLoading ? (
-                      <CircularProgress size={22} />
-                    ) : (
-                      <Typography
-                        variant="h3"
-                        fontWeight={700}
-                        sx={{ color: metric.accent, lineHeight: 1.1 }}
-                      >
-                        {chartError ? "—" : metric.value}
-                      </Typography>
-                    )
-                  ) : ratesLoading ? (
-                    <CircularProgress size={22} />
-                  ) : (
-                    <>
-                      <Box display="flex" alignItems="center" gap={0.5}>
-                        <Typography
-                          variant="h3"
-                          fontWeight={700}
-                          sx={{ color: metric.accent, lineHeight: 1.1 }}
-                        >
-                          {ratesError ? "—" : metric.value}
-                        </Typography>
-                        {metric.rate && (
-                          <TrendArrow trend={metric.rate.buyTrend} />
-                        )}
-                      </Box>
-                      {metric.rate && (
-                        <Box
-                          display="flex"
-                          alignItems="center"
-                          gap={0.5}
-                          mt={1}
-                        >
-                          <Typography variant="body2" color="text.secondary">
-                            Buy {metric.rate.sell.toFixed(2)}
-                          </Typography>
-                          <TrendArrow trend={metric.rate.sellTrend} />
-                        </Box>
-                      )}
-                      {!metric.rate && !ratesError && (
-                        <Typography variant="body2" color="text.secondary">
-                          No rate yet
-                        </Typography>
-                      )}
-                      {exchangeRates?.fetchedAt && metric.rate && (
-                        <Typography variant="caption" color="text.secondary">
-                          Updated{" "}
-                          {dayjs(exchangeRates.fetchedAt).format(
-                            "MMM D, HH:mm",
-                          )}
-                        </Typography>
-                      )}
-                    </>
-                  )}
-                </Paper>
-              ))}
-            </Box>
-          </Box>
-
-          <ExchangeRateHistoryCard />
+          <Paper
+            elevation={0}
+            sx={{
+              gridColumn: { xs: "1 / -1", md: "span 3" },
+              p: 2.5,
+              borderRadius: 2,
+              border: "1px solid rgba(148, 163, 184, 0.22)",
+              backgroundColor: "rgba(255,255,255,0.9)",
+            }}
+          >
+            <Typography variant="body2" color="text.secondary" mb={2}>
+              New properties today
+            </Typography>
+            {chartLoading ? (
+              <CircularProgress size={22} />
+            ) : (
+              <Typography
+                variant="h3"
+                fontWeight={700}
+                sx={{ color: "#0f766e", lineHeight: 1.1 }}
+              >
+                {chartError ? "—" : todayNewPropertyTotal}
+              </Typography>
+            )}
+          </Paper>
+          <ExchangeRateHistoryCard
+            latest={exchangeRates}
+            latestLoading={ratesLoading}
+            latestError={ratesError}
+          />
         </Box>
         <Paper
           elevation={0}
