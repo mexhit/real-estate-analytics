@@ -1,17 +1,8 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
-import {
-  Box,
-  Button,
-  Chip,
-  CircularProgress,
-  Paper,
-  Stack,
-  Typography,
-} from "@mui/material";
-import { ArrowDownward, ArrowUpward, Today } from "@mui/icons-material";
+import { Box, Chip, CircularProgress, Paper, Typography } from "@mui/material";
+import { ArrowDownward, ArrowUpward } from "@mui/icons-material";
 import dayjs from "dayjs";
 import {
   propertiesApi,
@@ -30,6 +21,7 @@ import {
   type PropertyTableItem,
 } from "@/components/PropertyTable";
 import { AreaDistributionChart } from "@/components/AreaDistributionChart";
+import { ExchangeRateHistoryCard } from "@/components/ExchangeRateHistoryCard";
 import { NewPropertiesChart } from "@/components/NewPropertiesChart";
 
 interface DashboardMetric {
@@ -148,10 +140,7 @@ export default function DashboardPage() {
 
       try {
         setLoading(true);
-        const [
-          todayPriceChangedRes,
-          todayApartment31Res,
-        ] = await Promise.all([
+        const [todayPriceChangedRes, todayApartment31Res] = await Promise.all([
           propertiesApi.getPaginatedProperties({
             limit: 8,
             page: 1,
@@ -214,296 +203,255 @@ export default function DashboardPage() {
 
   return (
     <>
-    <AppHeader />
-    <Box
-      p={{ xs: 2, md: 3 }}
-      sx={{
-        minHeight: "100vh",
-        bgcolor: WARM_BG,
-      }}
-    >
+      <AppHeader />
       <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        gap={2}
-        mb={2}
-        flexWrap="wrap"
-      >
-        <Box>
-          <Typography variant="h5" fontWeight={700}>
-            Property Monitoring
-          </Typography>
-          <Typography variant="body2" color="text.secondary" mt={0.5}>
-            Track today&apos;s new listings and price movement in one view.
-          </Typography>
-        </Box>
-      </Box>
-
-      <Box
+        p={{ xs: 2, md: 3 }}
         sx={{
-          display: "grid",
-          gridTemplateColumns: {
-            xs: "1fr",
-            md: "repeat(12, minmax(0, 1fr))",
-          },
-          gap: 2,
-          mb: 3,
+          minHeight: "100vh",
+          bgcolor: WARM_BG,
         }}
       >
-        <Box sx={{ gridColumn: { xs: "1 / -1", md: "span 7" } }}>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "repeat(3, minmax(0, 1fr))",
-              },
-              gap: 2,
-              height: "100%",
-            }}
-          >
-            {dashboardMetrics.map((metric) => (
-              <Paper
-                key={metric.label}
-                elevation={0}
-                sx={{
-                  p: 2.5,
-                  borderRadius: 2,
-                  border: "1px solid rgba(148, 163, 184, 0.22)",
-                  backgroundColor: "rgba(255,255,255,0.9)",
-                  minHeight: 132,
-                }}
-              >
-                <Typography variant="body2" color="text.secondary" mb={2}>
-                  {metric.label}
-                </Typography>
-                {metric.kind === "new-properties" ? (
-                  chartLoading ? (
-                    <CircularProgress size={22} />
-                  ) : (
-                    <Typography
-                      variant="h3"
-                      fontWeight={700}
-                      sx={{ color: metric.accent, lineHeight: 1.1 }}
-                    >
-                      {chartError ? "—" : metric.value}
-                    </Typography>
-                  )
-                ) : ratesLoading ? (
-                  <CircularProgress size={22} />
-                ) : (
-                  <>
-                    <Box display="flex" alignItems="center" gap={0.5}>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          gap={2}
+          mb={2}
+          flexWrap="wrap"
+        >
+          <Box>
+            <Typography variant="h5" fontWeight={700}>
+              Property Monitoring
+            </Typography>
+            <Typography variant="body2" color="text.secondary" mt={0.5}>
+              Track today&apos;s new listings and price movement in one view.
+            </Typography>
+          </Box>
+        </Box>
+
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              md: "repeat(12, minmax(0, 1fr))",
+            },
+            gap: 2,
+            mb: 3,
+          }}
+        >
+          <Box sx={{ gridColumn: { xs: "1 / -1", md: "span 7" } }}>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(3, minmax(0, 1fr))",
+                },
+                gap: 2,
+                height: "100%",
+              }}
+            >
+              {dashboardMetrics.map((metric) => (
+                <Paper
+                  key={metric.label}
+                  elevation={0}
+                  sx={{
+                    p: 2.5,
+                    borderRadius: 2,
+                    border: "1px solid rgba(148, 163, 184, 0.22)",
+                    backgroundColor: "rgba(255,255,255,0.9)",
+                    minHeight: 132,
+                  }}
+                >
+                  <Typography variant="body2" color="text.secondary" mb={2}>
+                    {metric.label}
+                  </Typography>
+                  {metric.kind === "new-properties" ? (
+                    chartLoading ? (
+                      <CircularProgress size={22} />
+                    ) : (
                       <Typography
                         variant="h3"
                         fontWeight={700}
                         sx={{ color: metric.accent, lineHeight: 1.1 }}
                       >
-                        {ratesError ? "—" : metric.value}
+                        {chartError ? "—" : metric.value}
                       </Typography>
-                      {metric.rate && <TrendArrow trend={metric.rate.buyTrend} />}
-                    </Box>
-                    {metric.rate && (
-                      <Box display="flex" alignItems="center" gap={0.5} mt={1}>
-                        <Typography variant="body2" color="text.secondary">
-                          Buy {metric.rate.sell.toFixed(2)}
+                    )
+                  ) : ratesLoading ? (
+                    <CircularProgress size={22} />
+                  ) : (
+                    <>
+                      <Box display="flex" alignItems="center" gap={0.5}>
+                        <Typography
+                          variant="h3"
+                          fontWeight={700}
+                          sx={{ color: metric.accent, lineHeight: 1.1 }}
+                        >
+                          {ratesError ? "—" : metric.value}
                         </Typography>
-                        <TrendArrow trend={metric.rate.sellTrend} />
+                        {metric.rate && (
+                          <TrendArrow trend={metric.rate.buyTrend} />
+                        )}
                       </Box>
-                    )}
-                    {!metric.rate && !ratesError && (
-                      <Typography variant="body2" color="text.secondary">
-                        No rate yet
-                      </Typography>
-                    )}
-                    {exchangeRates?.fetchedAt && metric.rate && (
-                      <Typography variant="caption" color="text.secondary">
-                        Updated{" "}
-                        {dayjs(exchangeRates.fetchedAt).format("MMM D, HH:mm")}
-                      </Typography>
-                    )}
-                  </>
-                )}
-              </Paper>
-            ))}
+                      {metric.rate && (
+                        <Box
+                          display="flex"
+                          alignItems="center"
+                          gap={0.5}
+                          mt={1}
+                        >
+                          <Typography variant="body2" color="text.secondary">
+                            Buy {metric.rate.sell.toFixed(2)}
+                          </Typography>
+                          <TrendArrow trend={metric.rate.sellTrend} />
+                        </Box>
+                      )}
+                      {!metric.rate && !ratesError && (
+                        <Typography variant="body2" color="text.secondary">
+                          No rate yet
+                        </Typography>
+                      )}
+                      {exchangeRates?.fetchedAt && metric.rate && (
+                        <Typography variant="caption" color="text.secondary">
+                          Updated{" "}
+                          {dayjs(exchangeRates.fetchedAt).format(
+                            "MMM D, HH:mm",
+                          )}
+                        </Typography>
+                      )}
+                    </>
+                  )}
+                </Paper>
+              ))}
+            </Box>
           </Box>
+
+          <ExchangeRateHistoryCard />
         </Box>
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 2,
+            border: "1px solid rgba(148, 163, 184, 0.22)",
+            backgroundColor: "rgba(255,255,255,0.9)",
+            overflow: "hidden",
+          }}
+        >
+          <Box
+            px={2.5}
+            py={2}
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            gap={2}
+            flexWrap="wrap"
+          >
+            <Box>
+              <Typography variant="h6" fontWeight={700}>
+                3_1 apartments posted today
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Today&apos;s new listings filtered to `APARTMENT_3_1`.
+              </Typography>
+            </Box>
+            <Chip
+              label={
+                loading ? "Loading..." : `${todayApartment31Total} posted today`
+              }
+              sx={{ borderRadius: 2 }}
+            />
+          </Box>
+
+          {loading ? (
+            <Box p={3} textAlign="center">
+              <CircularProgress size={24} />
+            </Box>
+          ) : todayApartment31Properties.length === 0 ? (
+            <Box px={2.5} py={3}>
+              <Typography color="text.secondary">
+                No `APARTMENT_3_1` listings were posted today.
+              </Typography>
+            </Box>
+          ) : (
+            <PropertyTable
+              properties={todayApartment31Properties}
+              onBookmark={handleBookmark}
+              onRetryAiMetadata={handleRetryAiMetadata}
+            />
+          )}
+        </Paper>
 
         <Paper
           elevation={0}
           sx={{
-            gridColumn: { xs: "1 / -1", md: "span 5" },
-            p: 2.5,
+            mt: 3,
             borderRadius: 2,
             border: "1px solid rgba(148, 163, 184, 0.22)",
-            backgroundColor: "rgba(15, 23, 42, 0.94)",
-            color: "#fff",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            minHeight: 132,
+            backgroundColor: "rgba(255,255,255,0.9)",
+            overflow: "hidden",
           }}
         >
-          <Box>
-            <Stack direction="row" spacing={1} alignItems="center" mb={1.5}>
-              <Today sx={{ color: "#60a5fa" }} />
-              <Typography variant="subtitle1" fontWeight={700}>
-                Today&apos;s focus
-              </Typography>
-            </Stack>
-            <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.7)" }}>
-              Review today&apos;s properties with price movement, then jump to
-              the full list.
-            </Typography>
-          </Box>
           <Box
-            mt={2}
+            px={2.5}
+            py={2}
             display="flex"
             justifyContent="space-between"
-            alignItems="flex-end"
+            alignItems="center"
             gap={2}
             flexWrap="wrap"
           >
-            <Typography variant="h4" fontWeight={700}>
-              {loading ? "..." : todayPriceChangedTotal}
-            </Typography>
-            <Button
-              component={Link}
-              href="/properties"
-              variant="contained"
-              sx={{
-                backgroundColor: "#2563eb",
-                textTransform: "none",
-                borderRadius: 2,
-                boxShadow: "none",
-              }}
-            >
-              Open properties
-            </Button>
+            <Box>
+              <Typography variant="h6" fontWeight={700}>
+                Price changes in today&apos;s posts
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Listings first posted today where the latest price differs from
+                the first captured price.
+              </Typography>
+            </Box>
+            <Chip
+              label={
+                loading
+                  ? "Loading..."
+                  : `${todayPriceChangedTotal} tracked today`
+              }
+              sx={{ borderRadius: 2 }}
+            />
           </Box>
+
+          {loading ? (
+            <Box p={3} textAlign="center">
+              <CircularProgress size={24} />
+            </Box>
+          ) : todayPriceChangedProperties.length === 0 ? (
+            <Box px={2.5} py={3}>
+              <Typography color="text.secondary">
+                No price changes detected on properties posted today.
+              </Typography>
+            </Box>
+          ) : (
+            <PropertyTable
+              properties={todayPriceChangedProperties}
+              onBookmark={handleBookmark}
+              onRetryAiMetadata={handleRetryAiMetadata}
+            />
+          )}
         </Paper>
-      </Box>
-      <Paper
-        elevation={0}
-        sx={{
-          borderRadius: 2,
-          border: "1px solid rgba(148, 163, 184, 0.22)",
-          backgroundColor: "rgba(255,255,255,0.9)",
-          overflow: "hidden",
-        }}
-      >
-        <Box
-          px={2.5}
-          py={2}
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          gap={2}
-          flexWrap="wrap"
-        >
-          <Box>
-            <Typography variant="h6" fontWeight={700}>
-              3_1 apartments posted today
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Today&apos;s new listings filtered to `APARTMENT_3_1`.
-            </Typography>
-          </Box>
-          <Chip
-            label={
-              loading ? "Loading..." : `${todayApartment31Total} posted today`
-            }
-            sx={{ borderRadius: 2 }}
-          />
+
+        <Box mt={3}>
+          <AreaDistributionChart />
         </Box>
 
-        {loading ? (
-          <Box p={3} textAlign="center">
-            <CircularProgress size={24} />
-          </Box>
-        ) : todayApartment31Properties.length === 0 ? (
-          <Box px={2.5} py={3}>
-            <Typography color="text.secondary">
-              No `APARTMENT_3_1` listings were posted today.
-            </Typography>
-          </Box>
-        ) : (
-          <PropertyTable
-            properties={todayApartment31Properties}
-            onBookmark={handleBookmark}
-            onRetryAiMetadata={handleRetryAiMetadata}
-          />
-        )}
-      </Paper>
-
-      <Paper
-        elevation={0}
-        sx={{
-          mt: 3,
-          borderRadius: 2,
-          border: "1px solid rgba(148, 163, 184, 0.22)",
-          backgroundColor: "rgba(255,255,255,0.9)",
-          overflow: "hidden",
-        }}
-      >
-        <Box
-          px={2.5}
-          py={2}
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          gap={2}
-          flexWrap="wrap"
-        >
-          <Box>
-            <Typography variant="h6" fontWeight={700}>
-              Price changes in today&apos;s posts
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Listings first posted today where the latest price differs from
-              the first captured price.
-            </Typography>
-          </Box>
-          <Chip
-            label={
-              loading ? "Loading..." : `${todayPriceChangedTotal} tracked today`
-            }
-            sx={{ borderRadius: 2 }}
+        <Box mt={3}>
+          <NewPropertiesChart
+            data={newPropertySeries}
+            loading={chartLoading}
+            error={chartError}
           />
         </Box>
-
-        {loading ? (
-          <Box p={3} textAlign="center">
-            <CircularProgress size={24} />
-          </Box>
-        ) : todayPriceChangedProperties.length === 0 ? (
-          <Box px={2.5} py={3}>
-            <Typography color="text.secondary">
-              No price changes detected on properties posted today.
-            </Typography>
-          </Box>
-        ) : (
-          <PropertyTable
-            properties={todayPriceChangedProperties}
-            onBookmark={handleBookmark}
-            onRetryAiMetadata={handleRetryAiMetadata}
-          />
-        )}
-      </Paper>
-
-      <Box mt={3}>
-        <AreaDistributionChart />
       </Box>
-
-      <Box mt={3}>
-        <NewPropertiesChart
-          data={newPropertySeries}
-          loading={chartLoading}
-          error={chartError}
-        />
-      </Box>
-    </Box>
     </>
   );
 }
