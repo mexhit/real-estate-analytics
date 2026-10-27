@@ -167,6 +167,10 @@ function SearchInput({ value, onChange, onClear, sx }: SearchInputProps) {
                 size="small"
                 onClick={onClear}
                 edge="end"
+                sx={{
+                  width: { xs: 44, sm: "auto" },
+                  height: { xs: 44, sm: "auto" },
+                }}
               >
                 <CloseIcon fontSize="small" />
               </IconButton>
@@ -625,6 +629,7 @@ export function PropertiesFilterBar({
         sx={{
           display: { xs: "flex", sm: "none" },
           alignItems: "center",
+          flexWrap: "wrap",
           gap: 1,
           mb: 2,
         }}
@@ -633,7 +638,7 @@ export function PropertiesFilterBar({
           value={search}
           onChange={onSearchChange}
           onClear={onSearchClear}
-          sx={{ flexGrow: 1, minWidth: 0 }}
+          sx={{ flexBasis: "100%" }}
         />
         <Button
           variant="outlined"
@@ -644,7 +649,7 @@ export function PropertiesFilterBar({
             </Badge>
           }
           sx={{
-            flexShrink: 0,
+            flexGrow: 1,
             minHeight: 44,
             bgcolor: "#fff",
             color: "#171717",
