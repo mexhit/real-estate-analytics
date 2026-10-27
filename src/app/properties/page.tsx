@@ -33,6 +33,7 @@ const PROPERTY_TYPES_STORAGE_KEY = "propertyTypes";
 const AREA_IDS_STORAGE_KEY = "areaIds";
 const SOURCES_STORAGE_KEY = "sources";
 const FURNISHED_STORAGE_KEY = "furnished";
+const SEARCH_DEBOUNCE_MS = 400;
 
 export default function PropertiesPage() {
   const router = useRouter();
@@ -64,6 +65,8 @@ export default function PropertiesPage() {
   const [onlyPriceChanged, setOnlyPriceChanged] = React.useState(false);
   const [onlyUntyped, setOnlyUntyped] = React.useState(false);
   const [onlyUnresolved, setOnlyUnresolved] = React.useState(false);
+  const [searchText, setSearchText] = React.useState("");
+  const [search, setSearch] = React.useState("");
   const [preferencesLoaded, setPreferencesLoaded] = React.useState(false);
 
   const updateUrl = React.useCallback(
@@ -74,6 +77,22 @@ export default function PropertiesPage() {
     },
     [router],
   );
+
+  React.useEffect(() => {
+    const trimmed = searchText.trim();
+
+    if (trimmed === search) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setSearch(trimmed);
+      setPage(0);
+      updateUrl(0);
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+  }, [searchText, search, updateUrl]);
 
   const handleBookmark = async (propertyId: number) => {
     setProducts((prev) =>
@@ -252,6 +271,7 @@ export default function PropertiesPage() {
           onlyPriceChanged,
           onlyUntyped,
           onlyUnresolved,
+          search: search || undefined,
         });
 
         setProducts(res.data);
@@ -279,6 +299,7 @@ export default function PropertiesPage() {
     onlyPriceChanged,
     onlyUntyped,
     onlyUnresolved,
+    search,
   ]);
 
   React.useEffect(() => {
@@ -391,7 +412,16 @@ export default function PropertiesPage() {
     updateUrl(0);
   };
 
+  const handleSearchClear = () => {
+    setSearchText("");
+    setSearch("");
+    setPage(0);
+    updateUrl(0);
+  };
+
   const handleClearFilters = () => {
+    setSearchText("");
+    setSearch("");
     setFromDate(null);
     setToDate(null);
     setPropertyTypes([]);
@@ -421,6 +451,9 @@ export default function PropertiesPage() {
       <Box p={{ xs: 2, sm: 3 }}>
         <PropertiesFilterBar
           filters={filters}
+          search={searchText}
+          onSearchChange={setSearchText}
+          onSearchClear={handleSearchClear}
           areas={areas}
           sourceOptions={sourceOptions}
           sourcesLoading={sourcesLoading}

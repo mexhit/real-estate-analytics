@@ -15,3 +15,7 @@ _Avoid_: Neighborhood, zone, district, location
 **Operator**:
 The person who uses this frontend to monitor listings and audit the Area roster.
 _Avoid_: User, admin
+
+**Search**:
+A free-text box above the Property Listing table. The Operator types words, and only Property Listings whose title or description contains every word are shown, ignoring case and accents. It is not remembered between visits.
+_Avoid_: Query, keyword filter, find

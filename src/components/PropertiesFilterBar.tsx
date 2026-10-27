@@ -8,15 +8,20 @@ import {
   Checkbox,
   Chip,
   Drawer,
+  IconButton,
+  InputAdornment,
   ListItemText,
   MenuItem,
   Popover,
   Select,
+  TextField,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
 } from "@mui/material";
 import TuneIcon from "@mui/icons-material/Tune";
+import SearchIcon from "@mui/icons-material/Search";
+import CloseIcon from "@mui/icons-material/Close";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -45,9 +50,10 @@ export interface PropertyFilters {
   onlyUnresolved: boolean;
 }
 
-export const hasActiveFilters = (f: PropertyFilters) =>
+export const hasActiveFilters = (f: PropertyFilters, search = "") =>
   Boolean(
-    f.fromDate ||
+    search.trim() ||
+      f.fromDate ||
       f.toDate ||
       f.propertyTypes.length > 0 ||
       f.areaIds.length > 0 ||
@@ -60,8 +66,9 @@ export const hasActiveFilters = (f: PropertyFilters) =>
       f.onlyUnresolved,
   );
 
-const countActiveFilters = (f: PropertyFilters) =>
+const countActiveFilters = (f: PropertyFilters, search: string) =>
   [
+    search.trim(),
     f.fromDate || f.toDate,
     f.propertyTypes.length > 0,
     f.areaIds.length > 0,
@@ -128,6 +135,48 @@ const controlSx = {
   "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#c9c4b8" },
   "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: ACCENT },
 };
+
+interface SearchInputProps {
+  value: string;
+  onChange: (value: string) => void;
+  onClear: () => void;
+  sx?: object;
+}
+
+function SearchInput({ value, onChange, onClear, sx }: SearchInputProps) {
+  return (
+    <TextField
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      placeholder="Search title or description"
+      size="small"
+      sx={sx}
+      slotProps={{
+        htmlInput: { "aria-label": "Search" },
+        input: {
+          sx: controlSx,
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon fontSize="small" />
+            </InputAdornment>
+          ),
+          endAdornment: value ? (
+            <InputAdornment position="end">
+              <IconButton
+                aria-label="Clear search"
+                size="small"
+                onClick={onClear}
+                edge="end"
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </InputAdornment>
+          ) : null,
+        },
+      }}
+    />
+  );
+}
 
 interface MultiFilterProps {
   label: string;
@@ -226,6 +275,9 @@ const EMPTY_FILTERS: PropertyFilters = {
 
 interface PropertiesFilterBarProps {
   filters: PropertyFilters;
+  search: string;
+  onSearchChange: (value: string) => void;
+  onSearchClear: () => void;
   areas: Area[];
   sourceOptions: PropertySourceOption[];
   sourcesLoading: boolean;
@@ -374,6 +426,9 @@ function FilterFields({
 
 export function PropertiesFilterBar({
   filters,
+  search,
+  onSearchChange,
+  onSearchClear,
   areas,
   sourceOptions,
   sourcesLoading,
@@ -389,7 +444,7 @@ export function PropertiesFilterBar({
   const now = dayjs();
   const preset = activePreset(filters.fromDate, filters.toDate, now);
   const draftPreset = activePreset(draft.fromDate, draft.toDate, now);
-  const activeCount = countActiveFilters(filters);
+  const activeCount = countActiveFilters(filters, search);
 
   const applyPreset = (key: DatePreset) => {
     const { from, to } = presetRange(key, now);
@@ -540,6 +595,12 @@ export function PropertiesFilterBar({
           borderRadius: 3,
         }}
       >
+        <SearchInput
+          value={search}
+          onChange={onSearchChange}
+          onClear={onSearchClear}
+          sx={{ width: 260 }}
+        />
         <FilterFields
           filters={filters}
           areas={areas}
@@ -549,7 +610,7 @@ export function PropertiesFilterBar({
           onChange={onChange}
         />
 
-        {hasActiveFilters(filters) && (
+        {hasActiveFilters(filters, search) && (
           <Button
             size="small"
             onClick={onClear}
@@ -568,6 +629,12 @@ export function PropertiesFilterBar({
           mb: 2,
         }}
       >
+        <SearchInput
+          value={search}
+          onChange={onSearchChange}
+          onClear={onSearchClear}
+          sx={{ flexGrow: 1, minWidth: 0 }}
+        />
         <Button
           variant="outlined"
           onClick={openSheet}
@@ -577,7 +644,7 @@ export function PropertiesFilterBar({
             </Badge>
           }
           sx={{
-            flexGrow: 1,
+            flexShrink: 0,
             minHeight: 44,
             bgcolor: "#fff",
             color: "#171717",
@@ -591,7 +658,7 @@ export function PropertiesFilterBar({
         >
           Filters
         </Button>
-        {hasActiveFilters(filters) && (
+        {hasActiveFilters(filters, search) && (
           <Button
             onClick={onClear}
             sx={{ minHeight: 44, textTransform: "none", color: ACCENT }}
