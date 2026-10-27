@@ -10,6 +10,8 @@ Last run: 2026-10-27, fresh servers, backend against the droplet database.
 
 - [x] Typing `celesi` quickly (6 keystrokes) sends **one** request, about 400 ms after the last key, with `search=celesi`.
 - [x] The result is the single listing "…THREE GARDENS, QERRET" (its text says "Çelësi"); the pager reads "1–1 of 1".
+- [x] Typing `ndertese` (phone width) returns listings whose text says "ndërtese"/"ndërtesë"; the API returns the same 547 listings for `ndertese` and `ndërtesë`.
+- [x] Symbols are literal: `100%` against the API (not typed in the browser) returns 76 listings rather than everything, so `%` is not acting as a wildcard.
 - [x] Typing `BLLOKU  Ballkon ` (upper case, double space, trailing space) sends one request with the trimmed text; the trailing space alone does not trigger another request. Results contain both words in any order.
 - [x] From page 2 of the unfiltered list, typing a search sends the request with `page=1` and the URL stays `?page=0`: the table returns to the first page.
 - [x] With **Price changed** active, the search request carries `onlyPriceChanged=true` and `search=…`; the pager shows "1–5 of 5".
@@ -31,3 +33,5 @@ Last run: 2026-10-27, fresh servers, backend against the droplet database.
 ## Not checked
 
 - Search failing loudly when the `unaccent` extension is missing (needs a database without it).
+- `2_1` and `\\` were only covered by the backend unit tests, not run against the database.
+- The `unaccent` migration was run twice against the droplet database (no local Postgres was available), not a local one.
