@@ -1,7 +1,16 @@
 "use client";
 
 import * as React from "react";
-import { Alert, Box, Paper, Skeleton, Stack, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Paper,
+  Skeleton,
+  Stack,
+  Typography,
+  useMediaQuery,
+} from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { PieChart } from "@mui/x-charts/PieChart";
 import dayjs, { type Dayjs } from "dayjs";
@@ -32,6 +41,8 @@ function toSlices(points: AreaDistributionPoint[]): Slice[] {
 }
 
 export function AreaDistributionChart() {
+  const isMobile = useMediaQuery(useTheme().breakpoints.down("sm"));
+  const chartHeight = isMobile ? 300 : 480;
   const [fromDate, setFromDate] = React.useState<Dayjs | null>(() =>
     dayjs().startOf("day"),
   );
@@ -96,11 +107,11 @@ export function AreaDistributionChart() {
       }}
     >
       <Box
-        px={2.5}
+        px={{ xs: 2, sm: 2.5 }}
         py={2}
         display="flex"
         justifyContent="space-between"
-        alignItems="center"
+        alignItems={{ xs: "stretch", sm: "center" }}
         gap={2}
         flexWrap="wrap"
       >
@@ -113,18 +124,32 @@ export function AreaDistributionChart() {
             {" · click an area to see its listings"}
           </Typography>
         </Box>
-        <Stack direction="row" spacing={1.5}>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={1.5}
+          sx={{ width: { xs: "100%", sm: "auto" } }}
+        >
           <DatePicker
             label="From date"
             value={fromDate}
             onChange={setFromDate}
-            slotProps={{ textField: { size: "small" } }}
+            slotProps={{
+              textField: { size: "small", fullWidth: isMobile },
+              openPickerButton: {
+                sx: isMobile ? { width: 44, height: 44 } : undefined,
+              },
+            }}
           />
           <DatePicker
             label="To date"
             value={toDate}
             onChange={setToDate}
-            slotProps={{ textField: { size: "small" } }}
+            slotProps={{
+              textField: { size: "small", fullWidth: isMobile },
+              openPickerButton: {
+                sx: isMobile ? { width: 44, height: 44 } : undefined,
+              },
+            }}
           />
         </Stack>
       </Box>
@@ -135,7 +160,7 @@ export function AreaDistributionChart() {
         </Box>
       ) : loading ? (
         <Box px={2.5} pb={2.5}>
-          <Skeleton variant="rounded" height={480} />
+          <Skeleton variant="rounded" height={chartHeight} />
         </Box>
       ) : slices.length === 0 ? (
         <Box px={2.5} pb={3}>
@@ -145,17 +170,17 @@ export function AreaDistributionChart() {
         </Box>
       ) : (
         <Box
-          px={2.5}
+          px={{ xs: 2, sm: 2.5 }}
           pb={2.5}
           display="flex"
           flexDirection={{ xs: "column", md: "row" }}
           gap={2}
           alignItems={{ xs: "stretch", md: "flex-start" }}
         >
-          <Box sx={{ flex: "1 1 60%", minWidth: 0, height: 480 }}>
+          <Box sx={{ flex: "1 1 60%", minWidth: 0, height: chartHeight }}>
             <PieChart
               hideLegend
-              height={480}
+              height={chartHeight}
               series={[
                 {
                   data: slices.map((slice) => ({
@@ -164,7 +189,7 @@ export function AreaDistributionChart() {
                     value: slice.value,
                     color: slice.color,
                   })),
-                  outerRadius: 220,
+                  outerRadius: isMobile ? 125 : 220,
                   paddingAngle: 0.5,
                   highlightScope: { fade: "global", highlight: "item" },
                   valueFormatter: ({ value }) => `${value} (${percent(value)})`,
@@ -176,7 +201,7 @@ export function AreaDistributionChart() {
               }}
             />
           </Box>
-          <Box sx={{ flex: "1 1 40%", maxHeight: 480, overflowY: "auto" }}>
+          <Box sx={{ flex: "1 1 40%", maxHeight: chartHeight, overflowY: "auto" }}>
             {slices.map((slice) => (
               <Box
                 key={slice.id}
@@ -185,8 +210,9 @@ export function AreaDistributionChart() {
                 alignItems="center"
                 gap={1}
                 px={1}
-                py={0.75}
                 sx={{
+                  minHeight: { xs: 44, sm: 0 },
+                  py: { xs: 0, sm: 0.75 },
                   borderRadius: 1,
                   cursor: "pointer",
                   "&:hover": { bgcolor: "rgba(148, 163, 184, 0.14)" },

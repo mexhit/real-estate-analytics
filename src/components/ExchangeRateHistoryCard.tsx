@@ -11,7 +11,9 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Typography,
+  useMediaQuery,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { LineChart } from "@mui/x-charts/LineChart";
 import dayjs from "dayjs";
 import {
@@ -55,6 +57,7 @@ export function ExchangeRateHistoryCard({
   latestLoading,
   latestError,
 }: ExchangeRateHistoryCardProps) {
+  const isMobile = useMediaQuery(useTheme().breakpoints.down("sm"));
   const [currency, setCurrency] = React.useState<RateCurrency>("EUR");
   const [range, setRange] = React.useState<RateHistoryRange>("today");
   const [history, setHistory] = React.useState<RateHistory | null>(null);
@@ -89,7 +92,8 @@ export function ExchangeRateHistoryCard({
       elevation={0}
       sx={{
         gridColumn: { xs: "1 / -1", md: "span 9" },
-        p: 2.5,
+        p: { xs: 2, md: 2.5 },
+        minWidth: 0,
         borderRadius: 2,
         border: "1px solid rgba(148, 163, 184, 0.22)",
         backgroundColor: "rgba(15, 23, 42, 0.94)",
@@ -104,7 +108,7 @@ export function ExchangeRateHistoryCard({
         gap={1.5}
         mb={1.5}
       >
-        <Stack direction="row" gap={1.5}>
+        <Stack direction="row" gap={1.5} sx={{ width: { xs: "100%", sm: "auto" } }}>
           {(["EUR", "USD"] as const).map((value) => {
             const rate = latest?.rates[value];
             const selected = value === currency;
@@ -119,7 +123,8 @@ export function ExchangeRateHistoryCard({
                   px: 2,
                   py: 1.25,
                   borderRadius: 2,
-                  minWidth: 150,
+                  minWidth: { xs: 0, sm: 150 },
+                  flex: { xs: 1, sm: "none" },
                   border: "1px solid",
                   borderColor: selected
                     ? CURRENCY_ACCENT[value]
@@ -162,7 +167,11 @@ export function ExchangeRateHistoryCard({
             );
           })}
         </Stack>
-        <Stack alignItems="flex-end" gap={0.5}>
+        <Stack
+          alignItems={{ xs: "stretch", sm: "flex-end" }}
+          gap={0.5}
+          sx={{ width: { xs: "100%", sm: "auto" } }}
+        >
           <ToggleButtonGroup
             size="small"
             exclusive
@@ -172,7 +181,11 @@ export function ExchangeRateHistoryCard({
             }
           >
             {(Object.keys(RANGE_LABELS) as RateHistoryRange[]).map((value) => (
-              <ToggleButton key={value} value={value} sx={toggleSx}>
+              <ToggleButton
+                key={value}
+                value={value}
+                sx={{ ...toggleSx, flex: { xs: 1, sm: "none" }, minHeight: 44 }}
+              >
                 {RANGE_LABELS[value]}
               </ToggleButton>
             ))}
@@ -216,7 +229,7 @@ export function ExchangeRateHistoryCard({
           ]}
           yAxis={[
             {
-              width: 56,
+              width: isMobile ? 46 : 56,
               valueFormatter: (v: number) => v.toFixed(2),
               domainLimit: (min: number, max: number) => {
                 const pad = Math.max((max - min) * 0.2, 0.05);

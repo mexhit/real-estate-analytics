@@ -24,3 +24,10 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Leave room for the fixed bottom tab bar (rendered by AppHeader) on phones. */
+@media (max-width: 599.95px) {
+  body:has(.mobile-bottom-nav) {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom));
+  }
+}

@@ -2,10 +2,12 @@
 
 import * as React from "react";
 import {
+  Badge,
   Box,
   Button,
   Checkbox,
   Chip,
+  Drawer,
   ListItemText,
   MenuItem,
   Popover,
@@ -14,6 +16,7 @@ import {
   ToggleButtonGroup,
   Typography,
 } from "@mui/material";
+import TuneIcon from "@mui/icons-material/Tune";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -56,6 +59,20 @@ export const hasActiveFilters = (f: PropertyFilters) =>
       f.onlyUntyped ||
       f.onlyUnresolved,
   );
+
+const countActiveFilters = (f: PropertyFilters) =>
+  [
+    f.fromDate || f.toDate,
+    f.propertyTypes.length > 0,
+    f.areaIds.length > 0,
+    f.sources.length > 0,
+    f.furnished !== "any",
+    f.onlyUnseen,
+    f.onlyBookmarked,
+    f.onlyPriceChanged,
+    f.onlyUntyped,
+    f.onlyUnresolved,
+  ].filter(Boolean).length;
 
 type DatePreset = "today" | "yesterday" | "7days" | "30days";
 
@@ -117,6 +134,7 @@ interface MultiFilterProps {
   options: { value: string; label: string }[];
   selected: string[];
   disabled?: boolean;
+  fullWidth?: boolean;
   onChange: (selected: string[]) => void;
 }
 
@@ -125,6 +143,7 @@ function MultiFilter({
   options,
   selected,
   disabled,
+  fullWidth,
   onChange,
 }: MultiFilterProps) {
   const renderValue = (values: string[]) => {
@@ -144,6 +163,7 @@ function MultiFilter({
       displayEmpty
       value={selected}
       disabled={disabled}
+      fullWidth={fullWidth}
       onChange={(event) => {
         const value = event.target.value;
 
@@ -177,7 +197,7 @@ function ToggleChip({ label, active, onToggle }: ToggleChipProps) {
       onClick={onToggle}
       aria-pressed={active}
       sx={{
-        height: 40,
+        height: { xs: 44, sm: 40 },
         px: 0.75,
         fontSize: 15,
         fontWeight: 500,
@@ -190,6 +210,20 @@ function ToggleChip({ label, active, onToggle }: ToggleChipProps) {
   );
 }
 
+const EMPTY_FILTERS: PropertyFilters = {
+  fromDate: null,
+  toDate: null,
+  propertyTypes: [],
+  areaIds: [],
+  sources: [],
+  furnished: "any",
+  onlyUnseen: false,
+  onlyBookmarked: false,
+  onlyPriceChanged: false,
+  onlyUntyped: false,
+  onlyUnresolved: false,
+};
+
 interface PropertiesFilterBarProps {
   filters: PropertyFilters;
   areas: Area[];
@@ -198,6 +232,144 @@ interface PropertiesFilterBarProps {
   sourcesError: string | null;
   onChange: (patch: Partial<PropertyFilters>) => void;
   onClear: () => void;
+}
+
+interface FilterFieldsProps
+  extends Pick<
+    PropertiesFilterBarProps,
+    "filters" | "areas" | "sourceOptions" | "sourcesLoading" | "sourcesError"
+  > {
+  onChange: (patch: Partial<PropertyFilters>) => void;
+  stacked?: boolean;
+}
+
+function FilterFields({
+  filters,
+  areas,
+  sourceOptions,
+  sourcesLoading,
+  sourcesError,
+  onChange,
+  stacked = false,
+}: FilterFieldsProps) {
+  const divider = stacked ? null : (
+    <Box sx={{ width: "1px", alignSelf: "stretch", bgcolor: BORDER }} />
+  );
+
+  return (
+    <>
+      <MultiFilter
+        label="Property type"
+        options={PROPERTY_TYPES.map((type) => ({ value: type, label: type }))}
+        selected={filters.propertyTypes}
+        disabled={filters.onlyUntyped}
+        fullWidth={stacked}
+        onChange={(selected) =>
+          onChange({ propertyTypes: selected as PropertyType[] })
+        }
+      />
+      <MultiFilter
+        label="Area"
+        options={areas.map((area) => ({
+          value: String(area.id),
+          label: area.name,
+        }))}
+        selected={filters.areaIds.map(String)}
+        disabled={filters.onlyUnresolved}
+        fullWidth={stacked}
+        onChange={(selected) => onChange({ areaIds: selected.map(Number) })}
+      />
+      <MultiFilter
+        label={
+          sourcesLoading
+            ? "Loading sources…"
+            : sourcesError
+              ? sourcesError
+              : "Source"
+        }
+        options={sourceOptions}
+        selected={filters.sources}
+        disabled={sourcesLoading || Boolean(sourcesError)}
+        fullWidth={stacked}
+        onChange={(selected) => onChange({ sources: selected })}
+      />
+      <Select
+        value={filters.furnished}
+        fullWidth={stacked}
+        onChange={(event) =>
+          onChange({ furnished: event.target.value as FurnishedFilter })
+        }
+        renderValue={(value) => (
+          <>
+            <Box component="span" color="text.secondary">
+              Furnished:{" "}
+            </Box>
+            {value === "any" ? "Any" : value === "yes" ? "Yes" : "No"}
+          </>
+        )}
+        sx={controlSx}
+        inputProps={{ "aria-label": "Furnished" }}
+      >
+        <MenuItem value="any">Any</MenuItem>
+        <MenuItem value="yes">Yes</MenuItem>
+        <MenuItem value="no">No</MenuItem>
+      </Select>
+
+      {divider}
+
+      <ToggleChip
+        label="Unseen"
+        active={filters.onlyUnseen}
+        onToggle={() => onChange({ onlyUnseen: !filters.onlyUnseen })}
+      />
+      <ToggleChip
+        label="Bookmarked"
+        active={filters.onlyBookmarked}
+        onToggle={() => onChange({ onlyBookmarked: !filters.onlyBookmarked })}
+      />
+      <ToggleChip
+        label="Price changed"
+        active={filters.onlyPriceChanged}
+        onToggle={() =>
+          onChange({ onlyPriceChanged: !filters.onlyPriceChanged })
+        }
+      />
+
+      {divider}
+
+      <Typography
+        sx={{
+          fontSize: 13,
+          fontWeight: 700,
+          letterSpacing: 0.8,
+          color: "#9a5b13",
+          ...(stacked && { flexBasis: "100%", mt: 1 }),
+        }}
+      >
+        NEEDS REVIEW
+      </Typography>
+      <ToggleChip
+        label="Missing area"
+        active={filters.onlyUnresolved}
+        onToggle={() =>
+          onChange({
+            onlyUnresolved: !filters.onlyUnresolved,
+            ...(!filters.onlyUnresolved && { areaIds: [] }),
+          })
+        }
+      />
+      <ToggleChip
+        label="Untyped"
+        active={filters.onlyUntyped}
+        onToggle={() =>
+          onChange({
+            onlyUntyped: !filters.onlyUntyped,
+            ...(!filters.onlyUntyped && { propertyTypes: [] }),
+          })
+        }
+      />
+    </>
+  );
 }
 
 export function PropertiesFilterBar({
@@ -212,13 +384,30 @@ export function PropertiesFilterBar({
   const [rangeAnchor, setRangeAnchor] = React.useState<HTMLElement | null>(
     null,
   );
+  const [sheetOpen, setSheetOpen] = React.useState(false);
+  const [draft, setDraft] = React.useState<PropertyFilters>(filters);
   const now = dayjs();
   const preset = activePreset(filters.fromDate, filters.toDate, now);
+  const draftPreset = activePreset(draft.fromDate, draft.toDate, now);
+  const activeCount = countActiveFilters(filters);
 
   const applyPreset = (key: DatePreset) => {
     const { from, to } = presetRange(key, now);
 
     onChange({ fromDate: from.startOf("day"), toDate: to.endOf("day") });
+  };
+
+  const patchDraft = (patch: Partial<PropertyFilters>) =>
+    setDraft((prev) => ({ ...prev, ...patch }));
+
+  const openSheet = () => {
+    setDraft(filters);
+    setSheetOpen(true);
+  };
+
+  const applySheet = () => {
+    onChange(draft);
+    setSheetOpen(false);
   };
 
   return (
@@ -229,7 +418,7 @@ export function PropertiesFilterBar({
         alignItems="flex-end"
         gap={2}
         flexWrap="wrap"
-        mb={3}
+        mb={{ xs: 2, sm: 3 }}
       >
         <Box>
           <Typography variant="h4" fontWeight={700}>
@@ -241,7 +430,12 @@ export function PropertiesFilterBar({
               : "All listings"}
           </Typography>
         </Box>
-        <Box display="flex" gap={1.5} alignItems="center" flexWrap="wrap">
+        <Box
+          sx={{ display: { xs: "none", sm: "flex" } }}
+          gap={1.5}
+          alignItems="center"
+          flexWrap="wrap"
+        >
           <ToggleButtonGroup
             exclusive
             size="small"
@@ -334,7 +528,7 @@ export function PropertiesFilterBar({
       </Popover>
 
       <Box
-        display="flex"
+        display={{ xs: "none", sm: "flex" }}
         alignItems="center"
         gap={1.5}
         flexWrap="wrap"
@@ -346,110 +540,13 @@ export function PropertiesFilterBar({
           borderRadius: 3,
         }}
       >
-        <MultiFilter
-          label="Property type"
-          options={PROPERTY_TYPES.map((type) => ({ value: type, label: type }))}
-          selected={filters.propertyTypes}
-          disabled={filters.onlyUntyped}
-          onChange={(selected) =>
-            onChange({ propertyTypes: selected as PropertyType[] })
-          }
-        />
-        <MultiFilter
-          label="Area"
-          options={areas.map((area) => ({
-            value: String(area.id),
-            label: area.name,
-          }))}
-          selected={filters.areaIds.map(String)}
-          disabled={filters.onlyUnresolved}
-          onChange={(selected) => onChange({ areaIds: selected.map(Number) })}
-        />
-        <MultiFilter
-          label={
-            sourcesLoading
-              ? "Loading sources…"
-              : sourcesError
-                ? sourcesError
-                : "Source"
-          }
-          options={sourceOptions}
-          selected={filters.sources}
-          disabled={sourcesLoading || Boolean(sourcesError)}
-          onChange={(selected) => onChange({ sources: selected })}
-        />
-        <Select
-          value={filters.furnished}
-          onChange={(event) =>
-            onChange({ furnished: event.target.value as FurnishedFilter })
-          }
-          renderValue={(value) => (
-            <>
-              <Box component="span" color="text.secondary">
-                Furnished:{" "}
-              </Box>
-              {value === "any" ? "Any" : value === "yes" ? "Yes" : "No"}
-            </>
-          )}
-          sx={controlSx}
-          inputProps={{ "aria-label": "Furnished" }}
-        >
-          <MenuItem value="any">Any</MenuItem>
-          <MenuItem value="yes">Yes</MenuItem>
-          <MenuItem value="no">No</MenuItem>
-        </Select>
-
-        <Box sx={{ width: "1px", alignSelf: "stretch", bgcolor: BORDER }} />
-
-        <ToggleChip
-          label="Unseen"
-          active={filters.onlyUnseen}
-          onToggle={() => onChange({ onlyUnseen: !filters.onlyUnseen })}
-        />
-        <ToggleChip
-          label="Bookmarked"
-          active={filters.onlyBookmarked}
-          onToggle={() => onChange({ onlyBookmarked: !filters.onlyBookmarked })}
-        />
-        <ToggleChip
-          label="Price changed"
-          active={filters.onlyPriceChanged}
-          onToggle={() =>
-            onChange({ onlyPriceChanged: !filters.onlyPriceChanged })
-          }
-        />
-
-        <Box sx={{ width: "1px", alignSelf: "stretch", bgcolor: BORDER }} />
-
-        <Typography
-          sx={{
-            fontSize: 13,
-            fontWeight: 700,
-            letterSpacing: 0.8,
-            color: "#9a5b13",
-          }}
-        >
-          NEEDS REVIEW
-        </Typography>
-        <ToggleChip
-          label="Missing area"
-          active={filters.onlyUnresolved}
-          onToggle={() =>
-            onChange({
-              onlyUnresolved: !filters.onlyUnresolved,
-              ...(!filters.onlyUnresolved && { areaIds: [] }),
-            })
-          }
-        />
-        <ToggleChip
-          label="Untyped"
-          active={filters.onlyUntyped}
-          onToggle={() =>
-            onChange({
-              onlyUntyped: !filters.onlyUntyped,
-              ...(!filters.onlyUntyped && { propertyTypes: [] }),
-            })
-          }
+        <FilterFields
+          filters={filters}
+          areas={areas}
+          sourceOptions={sourceOptions}
+          sourcesLoading={sourcesLoading}
+          sourcesError={sourcesError}
+          onChange={onChange}
         />
 
         {hasActiveFilters(filters) && (
@@ -462,6 +559,161 @@ export function PropertiesFilterBar({
           </Button>
         )}
       </Box>
+
+      <Box
+        sx={{
+          display: { xs: "flex", sm: "none" },
+          alignItems: "center",
+          gap: 1,
+          mb: 2,
+        }}
+      >
+        <Button
+          variant="outlined"
+          onClick={openSheet}
+          startIcon={
+            <Badge badgeContent={activeCount} color="primary">
+              <TuneIcon />
+            </Badge>
+          }
+          sx={{
+            flexGrow: 1,
+            minHeight: 44,
+            bgcolor: "#fff",
+            color: "#171717",
+            borderColor: BORDER,
+            borderRadius: 2.5,
+            textTransform: "none",
+            fontSize: 15,
+            fontWeight: 600,
+            "& .MuiButton-startIcon": { mr: 1.5 },
+          }}
+        >
+          Filters
+        </Button>
+        {hasActiveFilters(filters) && (
+          <Button
+            onClick={onClear}
+            sx={{ minHeight: 44, textTransform: "none", color: ACCENT }}
+          >
+            Clear
+          </Button>
+        )}
+      </Box>
+
+      <Drawer
+        anchor="bottom"
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        sx={{ display: { sm: "none" } }}
+        slotProps={{
+          paper: {
+            sx: {
+              maxHeight: "90dvh",
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+              bgcolor: WARM_BG,
+            },
+          },
+        }}
+      >
+        <Typography fontWeight={700} fontSize={18} sx={{ px: 2, pt: 2, pb: 1 }}>
+          Filters
+        </Typography>
+        <Box sx={{ overflowY: "auto", px: 2, pb: 2 }}>
+          <Typography
+            variant="body2"
+            fontWeight={600}
+            color="text.secondary"
+            sx={{ mb: 1 }}
+          >
+            First seen
+          </Typography>
+          <Box display="flex" flexWrap="wrap" gap={1} mb={1.5}>
+            {PRESETS.map(({ key, label }) => (
+              <ToggleChip
+                key={key}
+                label={label}
+                active={draftPreset === key}
+                onToggle={() => {
+                  if (draftPreset === key) {
+                    patchDraft({ fromDate: null, toDate: null });
+                    return;
+                  }
+                  const { from, to } = presetRange(key, now);
+
+                  patchDraft({
+                    fromDate: from.startOf("day"),
+                    toDate: to.endOf("day"),
+                  });
+                }}
+              />
+            ))}
+          </Box>
+          <Box display="flex" gap={1.5} mb={2.5}>
+            <DatePicker
+              label="From date"
+              value={draft.fromDate}
+              onChange={(value) => patchDraft({ fromDate: value })}
+              slotProps={{
+                textField: { size: "small", fullWidth: true },
+                openPickerButton: { sx: { width: 44, height: 44 } },
+              }}
+            />
+            <DatePicker
+              label="To date"
+              value={draft.toDate}
+              onChange={(value) => patchDraft({ toDate: value })}
+              slotProps={{
+                textField: { size: "small", fullWidth: true },
+                openPickerButton: { sx: { width: 44, height: 44 } },
+              }}
+            />
+          </Box>
+          <Box display="flex" flexWrap="wrap" gap={1.5}>
+            <FilterFields
+              stacked
+              filters={draft}
+              areas={areas}
+              sourceOptions={sourceOptions}
+              sourcesLoading={sourcesLoading}
+              sourcesError={sourcesError}
+              onChange={patchDraft}
+            />
+          </Box>
+        </Box>
+        <Box
+          sx={{
+            display: "flex",
+            gap: 1.5,
+            px: 2,
+            pt: 1.5,
+            pb: "max(16px, env(safe-area-inset-bottom))",
+            bgcolor: "#fff",
+            borderTop: `1px solid ${BORDER}`,
+          }}
+        >
+          <Button
+            onClick={() => setDraft(EMPTY_FILTERS)}
+            sx={{ minHeight: 44, textTransform: "none", color: ACCENT }}
+          >
+            Reset
+          </Button>
+          <Button
+            variant="contained"
+            onClick={applySheet}
+            sx={{
+              flexGrow: 1,
+              minHeight: 44,
+              textTransform: "none",
+              bgcolor: ACCENT,
+              "&:hover": { bgcolor: ACCENT },
+            }}
+          >
+            Apply
+          </Button>
+        </Box>
+      </Drawer>
     </>
   );
 }

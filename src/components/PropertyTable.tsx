@@ -213,6 +213,314 @@ function getPriceChangeInfo(
   };
 }
 
+function getRowBackground(
+  property: PropertyTableItem,
+  highlightProviderId: string | null,
+): string {
+  if (
+    highlightProviderId != null &&
+    property.providerId === highlightProviderId
+  ) {
+    return "#fff3cd";
+  }
+
+  return property.seen ? "background.paper" : "#f0f9ff";
+}
+
+// Chip links are 25px tall; grow the hit area to 44px on phones without
+// growing the layout (negative margin absorbs the extra height).
+const CHIP_LINK_SX = {
+  display: "inline-flex",
+  alignItems: "center",
+  textDecoration: "none",
+  minHeight: { xs: 44, sm: 0 },
+  my: { xs: "-9px", sm: 0 },
+} as const;
+
+interface PropertyMetaProps {
+  property: PropertyTableItem;
+  showProviderHistory: boolean;
+}
+
+function PropertyMeta({ property, showProviderHistory }: PropertyMetaProps) {
+  const repostCount = Number(property.providerPropertyCount);
+
+  return (
+    <Box
+      sx={{
+        mt: 1,
+        display: "flex",
+        alignItems: "center",
+        flexWrap: "wrap",
+        gap: 1.5,
+      }}
+    >
+      {property.propertyType && (
+        <Chip
+          label={property.propertyType}
+          size="small"
+          sx={{ fontWeight: 600, borderRadius: 1 }}
+        />
+      )}
+      {property.squareMeters != null && (
+        <Typography variant="body2" color="text.secondary">
+          {property.squareMeters} m²
+        </Typography>
+      )}
+      {property.isFurnished === true && (
+        <Box
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 0.5,
+          }}
+        >
+          <Check fontSize="small" />
+          <Typography variant="body2">Furnished</Typography>
+        </Box>
+      )}
+      {property.isFurnished === false && (
+        <Typography variant="body2" color="text.secondary">
+          Unfurnished
+        </Typography>
+      )}
+      <Box
+        sx={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 0.5,
+          color: "text.secondary",
+        }}
+      >
+        <CalendarTodayOutlined sx={{ fontSize: 16 }} />
+        <Typography variant="body2" color="text.secondary">
+          Listed {formatDate(property.createdAt)}
+        </Typography>
+      </Box>
+      {showProviderHistory && (
+        <Tooltip
+          title={`From ${formatDate(property.firstPostedAt)} to ${formatDate(
+            property.lastPostedAt,
+          )}`}
+          arrow
+        >
+          <Chip
+            icon={<AccessTime />}
+            label={`Active ${formatPeriod(
+              property.firstPostedAt,
+              property.lastPostedAt,
+            )}`}
+            size="small"
+            sx={{ fontWeight: 600 }}
+          />
+        </Tooltip>
+      )}
+      {showProviderHistory && repostCount > 1 && (
+        <Box
+          component={Link}
+          href={`/providers/${property.providerId}`}
+          target="_blank"
+          sx={CHIP_LINK_SX}
+        >
+          <Chip
+            icon={<Repeat />}
+            label={`× ${repostCount}`}
+            size="small"
+            color="warning"
+            variant="outlined"
+            sx={{ cursor: "pointer" }}
+          />
+        </Box>
+      )}
+      <Typography variant="body2" color="text.secondary">
+        #{property.id}
+      </Typography>
+    </Box>
+  );
+}
+
+interface PriceBlockProps {
+  property: PropertyTableItem;
+  showPricePosition: boolean;
+  align: "flex-start" | "flex-end";
+}
+
+function PriceBlock({ property, showPricePosition, align }: PriceBlockProps) {
+  const priceChange = getPriceChangeInfo(
+    property.firstPrice,
+    property.lastPrice,
+  );
+  const pricePerSquareMeter = getPricePerSquareMeter(
+    property.priceAmount,
+    property.squareMeters,
+  );
+  const pricePositionInfo = getPricePositionInfo(
+    property.pricePosition,
+    property.pricePositionPercentage,
+  );
+
+  return (
+    <>
+      {priceChange.type !== "unchanged" && (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: align,
+            alignItems: "center",
+            gap: 1,
+            mb: 0.5,
+          }}
+        >
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ textDecoration: "line-through" }}
+          >
+            {property.firstPrice}
+          </Typography>
+          <Chip
+            label={priceChange.diffLabel}
+            size="small"
+            color={priceChange.type === "increased" ? "error" : "success"}
+            variant="filled"
+          />
+        </Box>
+      )}
+      <Typography fontWeight={700} fontSize={18}>
+        {property.price}
+      </Typography>
+      {(pricePerSquareMeter != null ||
+        (showPricePosition && pricePositionInfo)) && (
+        <Box
+          sx={{
+            mt: 0.5,
+            display: "flex",
+            justifyContent: align,
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 1,
+          }}
+        >
+          {pricePerSquareMeter != null && (
+            <Typography variant="body2" color="text.secondary">
+              {formatPrice(pricePerSquareMeter)}/m²
+            </Typography>
+          )}
+          {showPricePosition && pricePositionInfo && (
+            <Tooltip
+              title={
+                pricePerSquareMeter != null &&
+                property.areaAvgPricePerSqm != null
+                  ? `${formatPrice(pricePerSquareMeter)}/m² vs ${
+                      property.areaName || "area"
+                    } average ${formatPrice(
+                      property.areaAvgPricePerSqm,
+                    )}/m² · based on ${
+                      property.areaSnapshotPropertyCount
+                    } listings · click to see them`
+                  : ""
+              }
+              arrow
+            >
+              <Box
+                component={Link}
+                href={`/areas/${property.areaId}/contributing-listings?highlightProviderId=${encodeURIComponent(
+                  property.providerId,
+                )}`}
+                target="_blank"
+                sx={CHIP_LINK_SX}
+              >
+                <Chip
+                  label={pricePositionInfo.label}
+                  size="small"
+                  color={pricePositionInfo.color}
+                  variant={pricePositionInfo.variant}
+                  sx={{ cursor: "pointer" }}
+                />
+              </Box>
+            </Tooltip>
+          )}
+        </Box>
+      )}
+    </>
+  );
+}
+
+interface RetryAiButtonProps {
+  property: PropertyTableItem;
+  disabled: boolean;
+  loading: boolean;
+  onRetry: () => void;
+  sx?: object;
+}
+
+function RetryAiButton({
+  property,
+  disabled,
+  loading,
+  onRetry,
+  sx,
+}: RetryAiButtonProps) {
+  return (
+    <Tooltip
+      title={
+        property.aiResponseError
+          ? `AI extraction error: ${property.aiResponseError}. Click to retry.`
+          : "Extract AI metadata"
+      }
+      arrow
+    >
+      <span>
+        <IconButton
+          aria-label={`Extract AI metadata for property ${property.id}`}
+          color={property.aiResponseError ? "error" : "default"}
+          disabled={disabled}
+          onClick={onRetry}
+          size="small"
+          sx={sx}
+        >
+          {loading ? (
+            <CircularProgress
+              color={property.aiResponseError ? "error" : "inherit"}
+              size={18}
+            />
+          ) : property.aiResponseError ? (
+            <ErrorOutline fontSize="small" />
+          ) : (
+            <AutoFixHigh fontSize="small" />
+          )}
+        </IconButton>
+      </span>
+    </Tooltip>
+  );
+}
+
+function BookmarkButton({
+  property,
+  onBookmark,
+  sx,
+}: {
+  property: PropertyTableItem;
+  onBookmark: (propertyId: number) => void | Promise<void>;
+  sx?: object;
+}) {
+  return (
+    <IconButton
+      aria-label={`Bookmark property ${property.id}`}
+      size="small"
+      onClick={() => onBookmark(property.id)}
+      sx={sx}
+    >
+      {property.bookmarked ? (
+        <Star sx={{ color: "#fbc02d" }} />
+      ) : (
+        <StarBorderOutlined />
+      )}
+    </IconButton>
+  );
+}
+
+
 export function PropertyTable({
   properties,
   onBookmark,
@@ -259,7 +567,10 @@ export function PropertyTable({
   return (
     <>
       <TableContainer>
-        <Table stickyHeader={stickyHeader} sx={{ tableLayout: "fixed" }}>
+        <Table
+          stickyHeader={stickyHeader}
+          sx={{ tableLayout: "fixed", minWidth: 1100 }}
+        >
           <TableHead>
             <TableRow>
               <TableCell sx={{ ...headerCellSx, width: 56 }} />
@@ -275,19 +586,6 @@ export function PropertyTable({
           </TableHead>
           <TableBody>
             {properties.map((property) => {
-              const priceChange = getPriceChangeInfo(
-                property.firstPrice,
-                property.lastPrice,
-              );
-              const pricePerSquareMeter = getPricePerSquareMeter(
-                property.priceAmount,
-                property.squareMeters,
-              );
-              const pricePositionInfo = getPricePositionInfo(
-                property.pricePosition,
-                property.pricePositionPercentage,
-              );
-              const repostCount = Number(property.providerPropertyCount);
               const isRetrying = retryingAiMetadataIds.has(property.id);
 
               return (
@@ -297,27 +595,17 @@ export function PropertyTable({
                   sx={{
                     transition: "0.2s",
                     "& > td": { verticalAlign: "top" },
-                    backgroundColor:
-                      highlightProviderId != null &&
-                      property.providerId === highlightProviderId
-                        ? "#fff3cd"
-                        : !property.seen
-                          ? "#f0f9ff"
-                          : "background.paper",
+                    backgroundColor: getRowBackground(
+                      property,
+                      highlightProviderId,
+                    ),
                   }}
                 >
                   <TableCell align="center" sx={{ px: 1 }}>
-                    <IconButton
-                      aria-label={`Bookmark property ${property.id}`}
-                      size="small"
-                      onClick={() => onBookmark(property.id)}
-                    >
-                      {property.bookmarked ? (
-                        <Star sx={{ color: "#fbc02d" }} />
-                      ) : (
-                        <StarBorderOutlined />
-                      )}
-                    </IconButton>
+                    <BookmarkButton
+                      property={property}
+                      onBookmark={onBookmark}
+                    />
                   </TableCell>
 
                   <TableCell>
@@ -369,181 +657,18 @@ export function PropertyTable({
                         </Typography>
                       </Tooltip>
                     )}
-                    <Box
-                      sx={{
-                        mt: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        flexWrap: "wrap",
-                        gap: 1.5,
-                      }}
-                    >
-                      {property.propertyType && (
-                        <Chip
-                          label={property.propertyType}
-                          size="small"
-                          sx={{ fontWeight: 600, borderRadius: 1 }}
-                        />
-                      )}
-                      {property.squareMeters != null && (
-                        <Typography variant="body2" color="text.secondary">
-                          {property.squareMeters} m²
-                        </Typography>
-                      )}
-                      {property.isFurnished === true && (
-                        <Box
-                          sx={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 0.5,
-                          }}
-                        >
-                          <Check fontSize="small" />
-                          <Typography variant="body2">Furnished</Typography>
-                        </Box>
-                      )}
-                      {property.isFurnished === false && (
-                        <Typography variant="body2" color="text.secondary">
-                          Unfurnished
-                        </Typography>
-                      )}
-                      <Box
-                        sx={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 0.5,
-                          color: "text.secondary",
-                        }}
-                      >
-                        <CalendarTodayOutlined sx={{ fontSize: 16 }} />
-                        <Typography variant="body2" color="text.secondary">
-                          Listed {formatDate(property.createdAt)}
-                        </Typography>
-                      </Box>
-                      {showProviderHistory && (
-                        <Tooltip
-                          title={`From ${formatDate(
-                            property.firstPostedAt,
-                          )} to ${formatDate(property.lastPostedAt)}`}
-                          arrow
-                        >
-                          <Chip
-                            icon={<AccessTime />}
-                            label={`Active ${formatPeriod(
-                              property.firstPostedAt,
-                              property.lastPostedAt,
-                            )}`}
-                            size="small"
-                            sx={{ fontWeight: 600 }}
-                          />
-                        </Tooltip>
-                      )}
-                      {showProviderHistory && repostCount > 1 && (
-                        <Link
-                          href={`/providers/${property.providerId}`}
-                          style={{ textDecoration: "none" }}
-                          target="_blank"
-                        >
-                          <Chip
-                            icon={<Repeat />}
-                            label={`× ${repostCount}`}
-                            size="small"
-                            color="warning"
-                            variant="outlined"
-                            sx={{ cursor: "pointer" }}
-                          />
-                        </Link>
-                      )}
-                      <Typography variant="body2" color="text.secondary">
-                        #{property.id}
-                      </Typography>
-                    </Box>
+                    <PropertyMeta
+                      property={property}
+                      showProviderHistory={showProviderHistory}
+                    />
                   </TableCell>
 
                   <TableCell align="right">
-                    {priceChange.type !== "unchanged" && (
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "flex-end",
-                          alignItems: "center",
-                          gap: 1,
-                          mb: 0.5,
-                        }}
-                      >
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ textDecoration: "line-through" }}
-                        >
-                          {property.firstPrice}
-                        </Typography>
-                        <Chip
-                          label={priceChange.diffLabel}
-                          size="small"
-                          color={
-                            priceChange.type === "increased"
-                              ? "error"
-                              : "success"
-                          }
-                          variant="filled"
-                        />
-                      </Box>
-                    )}
-                    <Typography fontWeight={700} fontSize={18}>
-                      {property.price}
-                    </Typography>
-                    {(pricePerSquareMeter != null ||
-                      (showPricePosition && pricePositionInfo)) && (
-                      <Box
-                        sx={{
-                          mt: 0.5,
-                          display: "flex",
-                          justifyContent: "flex-end",
-                          alignItems: "center",
-                          gap: 1,
-                        }}
-                      >
-                        {pricePerSquareMeter != null && (
-                          <Typography variant="body2" color="text.secondary">
-                            {formatPrice(pricePerSquareMeter)}/m²
-                          </Typography>
-                        )}
-                        {showPricePosition && pricePositionInfo && (
-                          <Tooltip
-                            title={
-                              pricePerSquareMeter != null &&
-                              property.areaAvgPricePerSqm != null
-                                ? `${formatPrice(pricePerSquareMeter)}/m² vs ${
-                                    property.areaName || "area"
-                                  } average ${formatPrice(
-                                    property.areaAvgPricePerSqm,
-                                  )}/m² · based on ${
-                                    property.areaSnapshotPropertyCount
-                                  } listings · click to see them`
-                                : ""
-                            }
-                            arrow
-                          >
-                            <Link
-                              href={`/areas/${property.areaId}/contributing-listings?highlightProviderId=${encodeURIComponent(
-                                property.providerId,
-                              )}`}
-                              style={{ textDecoration: "none" }}
-                              target="_blank"
-                            >
-                              <Chip
-                                label={pricePositionInfo.label}
-                                size="small"
-                                color={pricePositionInfo.color}
-                                variant={pricePositionInfo.variant}
-                                sx={{ cursor: "pointer" }}
-                              />
-                            </Link>
-                          </Tooltip>
-                        )}
-                      </Box>
-                    )}
+                    <PriceBlock
+                      property={property}
+                      showPricePosition={showPricePosition}
+                      align="flex-end"
+                    />
                   </TableCell>
 
                   <TableCell>
@@ -581,37 +706,12 @@ export function PropertyTable({
                         gap: 0.5,
                       }}
                     >
-                      <Tooltip
-                        title={
-                          property.aiResponseError
-                            ? `AI extraction error: ${property.aiResponseError}. Click to retry.`
-                            : "Extract AI metadata"
-                        }
-                        arrow
-                      >
-                        <span>
-                          <IconButton
-                            aria-label={`Extract AI metadata for property ${property.id}`}
-                            color={property.aiResponseError ? "error" : "default"}
-                            disabled={!onRetryAiMetadata || isRetrying}
-                            onClick={() => handleRetryAiMetadata(property.id)}
-                            size="small"
-                          >
-                            {isRetrying ? (
-                              <CircularProgress
-                                color={
-                                  property.aiResponseError ? "error" : "inherit"
-                                }
-                                size={18}
-                              />
-                            ) : property.aiResponseError ? (
-                              <ErrorOutline fontSize="small" />
-                            ) : (
-                              <AutoFixHigh fontSize="small" />
-                            )}
-                          </IconButton>
-                        </span>
-                      </Tooltip>
+                      <RetryAiButton
+                        property={property}
+                        disabled={!onRetryAiMetadata || isRetrying}
+                        loading={isRetrying}
+                        onRetry={() => handleRetryAiMetadata(property.id)}
+                      />
                       <Box sx={{ width: 34, mr: 0.5 }}>
                         {onUpdateProperty && (
                           <IconButton

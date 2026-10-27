@@ -85,7 +85,7 @@ export default function SettingsPage() {
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: WARM_BG }}>
       <AppHeader />
-      <Box p={3}>
+      <Box p={{ xs: 2, sm: 3 }}>
       <Box
         display="flex"
         justifyContent="space-between"
@@ -105,7 +105,7 @@ export default function SettingsPage() {
           border: "1px solid",
           borderColor: "divider",
           backgroundColor: "#fff",
-          p: 3,
+          p: { xs: 2, sm: 3 },
           maxWidth: 480,
         }}
       >
@@ -156,7 +156,11 @@ export default function SettingsPage() {
                 variant="contained"
                 onClick={handleSave}
                 disabled={saving || !aiProvider}
-                sx={{ textTransform: "none" }}
+                sx={{
+                  textTransform: "none",
+                  minHeight: { xs: 44, sm: 0 },
+                  width: { xs: "100%", sm: "auto" },
+                }}
               >
                 {saving ? "Saving..." : "Save"}
               </Button>

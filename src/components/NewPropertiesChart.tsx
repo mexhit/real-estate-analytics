@@ -1,8 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { Alert, Box, Paper, Skeleton, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Paper,
+  Skeleton,
+  Typography,
+  useMediaQuery,
+} from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { BarChart, BarElement, type BarProps } from "@mui/x-charts/BarChart";
+import dayjs from "dayjs";
 import type { NewPropertySeriesPoint } from "@/api/properties";
 
 interface NewPropertiesChartProps {
@@ -34,6 +43,8 @@ export function NewPropertiesChart({
   loading,
   error,
 }: NewPropertiesChartProps) {
+  const isMobile = useMediaQuery(useTheme().breakpoints.down("sm"));
+  const chartHeight = isMobile ? 240 : 320;
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [width, setWidth] = React.useState(0);
   const [focusedPoint, setFocusedPoint] =
@@ -103,7 +114,7 @@ export function NewPropertiesChart({
       {loading ? (
         <Skeleton
           variant="rounded"
-          height={320}
+          height={chartHeight}
           aria-label="Loading New Property chart"
         />
       ) : error ? (
@@ -113,16 +124,20 @@ export function NewPropertiesChart({
       ) : (
         <>
           <BarChart
-            height={320}
+            height={chartHeight}
             dataset={dataset}
             xAxis={[
               {
                 dataKey: "date",
                 scaleType: "band",
                 tickLabelInterval: (_value, index) => index % labelStep === 0,
-                valueFormatter: (value: string) => formatDateLabel(value),
+                valueFormatter: (value: string, context) =>
+                  isMobile && context.location === "tick"
+                    ? dayjs(value).format("D MMM")
+                    : formatDateLabel(value),
               },
             ]}
+            yAxis={[{ width: isMobile ? 32 : undefined }]}
             series={[
               {
                 dataKey: "count",
@@ -134,7 +149,12 @@ export function NewPropertiesChart({
             slots={{ bar: AccessibleBar }}
             grid={{ horizontal: true }}
             hideLegend
-            margin={{ left: 42, right: 16, top: 12, bottom: 52 }}
+            margin={{
+              left: isMobile ? 4 : 42,
+              right: isMobile ? 8 : 16,
+              top: 12,
+              bottom: isMobile ? 44 : 52,
+            }}
           />
           <Box minHeight={24} mt={0.5} aria-live="polite">
             {focusedPoint && (

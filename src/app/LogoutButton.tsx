@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { authApi } from "@/api/auth";
 import { clearAuthToken } from "@/api/client";
@@ -30,9 +30,23 @@ export function LogoutButton() {
       startIcon={<LogoutIcon />}
       onClick={handleLogout}
       disabled={loading}
-      sx={{ textTransform: "none", borderRadius: 2 }}
+      aria-label="Logout"
+      sx={{
+        textTransform: "none",
+        borderRadius: 2,
+        flexShrink: 0,
+        minWidth: { xs: 44, sm: 64 },
+        minHeight: { xs: 44, sm: 0 },
+        px: { xs: 0, sm: 1.25 },
+        "& .MuiButton-startIcon": {
+          mr: { xs: 0, sm: 1 },
+          ml: { xs: 0, sm: -0.5 },
+        },
+      }}
     >
-      {loading ? "Logging out..." : "Logout"}
+      <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+        {loading ? "Logging out..." : "Logout"}
+      </Box>
     </Button>
   );
 }

@@ -224,7 +224,7 @@ export default function AreasPage() {
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: WARM_BG }}>
       <AppHeader />
-      <Box p={3}>
+      <Box p={{ xs: 2, sm: 3 }}>
       <Box
         display="flex"
         justifyContent="space-between"
@@ -251,7 +251,7 @@ export default function AreasPage() {
             variant="contained"
             startIcon={<AddIcon />}
             onClick={openDialog}
-            sx={{ textTransform: "none" }}
+            sx={{ textTransform: "none", minHeight: { xs: 44, sm: 0 } }}
           >
             Add Area
           </Button>
@@ -267,7 +267,7 @@ export default function AreasPage() {
           </Box>
         ) : (
           <TableContainer>
-            <Table>
+            <Table sx={{ minWidth: 900 }}>
               <TableHead>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
@@ -363,6 +363,7 @@ export default function AreasPage() {
           display="flex"
           justifyContent="space-between"
           alignItems="center"
+          flexWrap="wrap"
           gap={2}
         >
           <Typography variant="subtitle1" fontWeight={600}>
@@ -372,6 +373,7 @@ export default function AreasPage() {
             variant="outlined"
             onClick={handleRunSnapshotJob}
             disabled={runningSnapshotJob}
+            sx={{ minHeight: { xs: 44, sm: 0 } }}
           >
             {runningSnapshotJob ? "Running..." : "Run now"}
           </Button>

@@ -132,11 +132,13 @@ export default function ProviderPropertiesPage() {
   }
 
   return (
-    <Box p={3}>
+    <Box p={{ xs: 2, sm: 3 }}>
       <Box
         display="flex"
         justifyContent="space-between"
         alignItems="center"
+        flexWrap="wrap"
+        gap={2}
         mb={2}
       >
         <Typography variant="h5">
@@ -156,7 +158,7 @@ export default function ProviderPropertiesPage() {
 
       <Paper>
         <TableContainer>
-          <Table>
+          <Table sx={{ minWidth: 900 }}>
             <TableHead>
               <TableRow>
                 <TableCell>ID</TableCell>
@@ -239,6 +241,22 @@ export default function ProviderPropertiesPage() {
           page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
+          sx={{
+            "& .MuiTablePagination-selectLabel, & .MuiTablePagination-input": {
+              display: { xs: "none", sm: "block" },
+            },
+            "& .MuiTablePagination-actions button": {
+                width: { xs: 44, sm: "auto" },
+                height: { xs: 44, sm: "auto" },
+              },
+              "& .MuiTablePagination-spacer": {
+              display: { xs: "none", sm: "block" },
+            },
+            "& .MuiTablePagination-displayedRows": {
+              flexGrow: { xs: 1, sm: 0 },
+              textAlign: { xs: "center", sm: "left" },
+            },
+          }}
         />
       </Paper>
     </Box>

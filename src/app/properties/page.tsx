@@ -418,7 +418,7 @@ export default function PropertiesPage() {
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: WARM_BG }}>
       <AppHeader />
-      <Box p={3}>
+      <Box p={{ xs: 2, sm: 3 }}>
         <PropertiesFilterBar
           filters={filters}
           areas={areas}
@@ -460,6 +460,24 @@ export default function PropertiesPage() {
             page={page}
             onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
+            sx={{
+              "& .MuiTablePagination-selectLabel, & .MuiTablePagination-input":
+                { display: { xs: "none", sm: "block" } },
+              "& .MuiTablePagination-toolbar": {
+                px: { xs: 1, sm: 2 },
+              },
+              "& .MuiTablePagination-actions button": {
+                width: { xs: 44, sm: "auto" },
+                height: { xs: 44, sm: "auto" },
+              },
+              "& .MuiTablePagination-spacer": {
+                display: { xs: "none", sm: "block" },
+              },
+              "& .MuiTablePagination-displayedRows": {
+                flexGrow: { xs: 1, sm: 0 },
+                textAlign: { xs: "center", sm: "left" },
+              },
+            }}
           />
         </Paper>
       </Box>

@@ -49,7 +49,7 @@ export default function LoginPage() {
         sx={{
           width: "100%",
           maxWidth: 420,
-          p: 4,
+          p: { xs: 3, sm: 4 },
           borderRadius: 2,
           border: "1px solid",
           borderColor: "divider",

@@ -14,7 +14,9 @@ import {
   MenuItem,
   Select,
   TextField,
+  useMediaQuery,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { isAxiosError } from "axios";
 import { PROPERTY_TYPES, type UpdatePropertyPayload } from "@/api/properties";
 import { type Area } from "@/api/areas";
@@ -59,6 +61,7 @@ export function EditPropertyDialog({
   onClose,
   onSave,
 }: EditPropertyDialogProps) {
+  const isMobile = useMediaQuery(useTheme().breakpoints.down("sm"));
   const [initialFields, setInitialFields] =
     React.useState<EditableFields | null>(null);
   const [fields, setFields] = React.useState<EditableFields | null>(null);
@@ -164,8 +167,18 @@ export function EditPropertyDialog({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-      <Box component="form" onSubmit={handleSubmit}>
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      fullWidth
+      maxWidth="sm"
+      fullScreen={isMobile}
+    >
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}
+      >
         <DialogTitle>Edit Property</DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} pt={1}>
