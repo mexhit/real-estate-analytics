@@ -46,6 +46,7 @@ export interface Property {
   createdAt: number | string;
   seen: boolean;
   bookmarked: boolean;
+  dismissed: boolean;
   providerPropertyCount?: string;
   firstPostedAt?: string;
   lastPostedAt?: string;
@@ -80,6 +81,7 @@ export interface GetPaginatedPropertiesParams {
   isFurnished?: boolean;
   onlyUnseen?: boolean;
   onlyBookmarked?: boolean;
+  hideDismissed?: boolean;
   onlyPriceChanged?: boolean;
   onlyUntyped?: boolean;
   onlyUnresolved?: boolean;
@@ -95,6 +97,11 @@ export interface GetPropertiesByProviderIdParams {
 export interface BookmarkPropertyParams {
   propertyId: number;
   bookmarked?: boolean;
+}
+
+export interface DismissPropertyParams {
+  propertyId: number;
+  dismissed?: boolean;
 }
 
 export interface ExtractAiMetadataParams {
@@ -134,6 +141,10 @@ class PropertiesApi {
     return apiClient
       .get("/properties", { params })
       .then((response: { data: PaginatedResponse<Property> }) => response.data);
+  }
+
+  dismissProperty({ propertyId, dismissed }: DismissPropertyParams) {
+    return apiClient.put(`/properties/${propertyId}/dismiss/${dismissed}`);
   }
 
   getPropertySources(): Promise<PropertySourceOption[]> {

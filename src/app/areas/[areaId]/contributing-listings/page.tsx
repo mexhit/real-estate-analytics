@@ -19,6 +19,7 @@ import {
   type ContributingListingsSummary,
 } from "@/api/areas";
 import { propertiesApi, type UpdatePropertyPayload } from "@/api/properties";
+import { applyListingMark } from "@/lib/listing-marks";
 import { AppHeader, WARM_BG } from "@/components/AppHeader";
 import {
   buildPricePerSqmBuckets,
@@ -171,15 +172,42 @@ export default function ContributingListingsPage() {
   };
 
   const handleBookmark = async (propertyId: number) => {
+    const current = properties.find((p) => p.id === propertyId);
+
+    if (!current) return;
+
     setProperties((prev) =>
-      prev.map((p) =>
-        p.id === propertyId ? { ...p, bookmarked: !p.bookmarked } : p,
+      applyListingMark(
+        prev,
+        current.providerId,
+        "bookmarked",
+        !current.bookmarked,
       ),
     );
 
     await propertiesApi.bookmarkProperty({
       propertyId,
-      bookmarked: !properties.find((p) => p.id === propertyId)?.bookmarked,
+      bookmarked: !current.bookmarked,
+    });
+  };
+
+  const handleDismiss = async (propertyId: number) => {
+    const current = properties.find((p) => p.id === propertyId);
+
+    if (!current) return;
+
+    setProperties((prev) =>
+      applyListingMark(
+        prev,
+        current.providerId,
+        "dismissed",
+        !current.dismissed,
+      ),
+    );
+
+    await propertiesApi.dismissProperty({
+      propertyId,
+      dismissed: !current.dismissed,
     });
   };
 
@@ -304,6 +332,7 @@ export default function ContributingListingsPage() {
               <PropertyTable
                 properties={properties}
                 onBookmark={handleBookmark}
+                onDismiss={handleDismiss}
                 areas={areas}
                 onUpdateProperty={handleUpdateProperty}
                 showPricePosition={false}

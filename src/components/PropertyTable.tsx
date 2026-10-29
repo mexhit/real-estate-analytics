@@ -20,6 +20,7 @@ import {
 import {
   AccessTime,
   AutoFixHigh,
+  BlockOutlined,
   CalendarTodayOutlined,
   Check,
   Edit,
@@ -60,6 +61,7 @@ export interface PropertyTableItem {
   seen: boolean;
   createdAt: number | string;
   bookmarked: boolean;
+  dismissed: boolean;
   firstPostedAt?: string;
   lastPostedAt?: string;
   firstPrice?: string;
@@ -69,6 +71,7 @@ export interface PropertyTableItem {
 interface PropertyTableProps {
   properties: PropertyTableItem[];
   onBookmark: (propertyId: number) => void | Promise<void>;
+  onDismiss: (propertyId: number) => void | Promise<void>;
   onRetryAiMetadata?: (propertyId: number) => void | Promise<void>;
   areas?: Area[];
   onUpdateProperty?: (
@@ -158,7 +161,11 @@ function formatPeriod(
 function getPricePositionInfo(
   pricePosition: import("@/api/properties").PricePosition | null | undefined,
   pricePositionPercentage: number | null | undefined,
-): { label: string; color: "error" | "success" | "default"; variant: "filled" | "outlined" } | null {
+): {
+  label: string;
+  color: "error" | "success" | "default";
+  variant: "filled" | "outlined";
+} | null {
   if (!pricePosition) return null;
 
   if (pricePosition === "above") {
@@ -222,6 +229,10 @@ function getRowBackground(
     property.providerId === highlightProviderId
   ) {
     return "#fff3cd";
+  }
+
+  if (property.dismissed) {
+    return "#f5f5f5";
   }
 
   return property.seen ? "background.paper" : "#f0f9ff";
@@ -520,10 +531,35 @@ function BookmarkButton({
   );
 }
 
+function DismissButton({
+  property,
+  onDismiss,
+}: {
+  property: PropertyTableItem;
+  onDismiss: (propertyId: number) => void | Promise<void>;
+}) {
+  return (
+    <Tooltip
+      title={property.dismissed ? "Undo dismiss" : "Dismiss: not interested"}
+    >
+      <IconButton
+        aria-label={`Dismiss property ${property.id}`}
+        size="small"
+        onClick={() => onDismiss(property.id)}
+      >
+        <BlockOutlined
+          fontSize="small"
+          sx={{ color: property.dismissed ? "#d32f2f" : undefined }}
+        />
+      </IconButton>
+    </Tooltip>
+  );
+}
 
 export function PropertyTable({
   properties,
   onBookmark,
+  onDismiss,
   onRetryAiMetadata,
   areas = [],
   onUpdateProperty,
@@ -606,6 +642,7 @@ export function PropertyTable({
                       property={property}
                       onBookmark={onBookmark}
                     />
+                    <DismissButton property={property} onDismiss={onDismiss} />
                   </TableCell>
 
                   <TableCell>
@@ -617,6 +654,17 @@ export function PropertyTable({
                         minWidth: 0,
                       }}
                     >
+                      {property.dismissed && (
+                        <Tooltip title="You dismissed this listing, even if it was re-posted">
+                          <Chip
+                            label="DISMISSED"
+                            size="small"
+                            color="error"
+                            variant="outlined"
+                            sx={{ fontWeight: 700, height: 22 }}
+                          />
+                        </Tooltip>
+                      )}
                       {!property.seen && (
                         <Chip
                           label="NEW"

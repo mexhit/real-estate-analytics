@@ -45,6 +45,7 @@ export interface PropertyFilters {
   furnished: FurnishedFilter;
   onlyUnseen: boolean;
   onlyBookmarked: boolean;
+  hideDismissed: boolean;
   onlyPriceChanged: boolean;
   onlyUntyped: boolean;
   onlyUnresolved: boolean;
@@ -61,6 +62,7 @@ export const hasActiveFilters = (f: PropertyFilters, search = "") =>
       f.furnished !== "any" ||
       f.onlyUnseen ||
       f.onlyBookmarked ||
+      f.hideDismissed ||
       f.onlyPriceChanged ||
       f.onlyUntyped ||
       f.onlyUnresolved,
@@ -76,6 +78,7 @@ const countActiveFilters = (f: PropertyFilters, search: string) =>
     f.furnished !== "any",
     f.onlyUnseen,
     f.onlyBookmarked,
+    f.hideDismissed,
     f.onlyPriceChanged,
     f.onlyUntyped,
     f.onlyUnresolved,
@@ -272,6 +275,7 @@ const EMPTY_FILTERS: PropertyFilters = {
   furnished: "any",
   onlyUnseen: false,
   onlyBookmarked: false,
+  hideDismissed: false,
   onlyPriceChanged: false,
   onlyUntyped: false,
   onlyUnresolved: false,
@@ -382,6 +386,11 @@ function FilterFields({
         label="Bookmarked"
         active={filters.onlyBookmarked}
         onToggle={() => onChange({ onlyBookmarked: !filters.onlyBookmarked })}
+      />
+      <ToggleChip
+        label="Hide dismissed"
+        active={filters.hideDismissed}
+        onToggle={() => onChange({ hideDismissed: !filters.hideDismissed })}
       />
       <ToggleChip
         label="Price changed"

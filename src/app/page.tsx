@@ -8,6 +8,7 @@ import {
   PROPERTY_TYPES,
   type NewPropertySeriesPoint,
 } from "@/api/properties";
+import { applyListingMark } from "@/lib/listing-marks";
 import {
   exchangeRatesApi,
   type LatestExchangeRates,
@@ -41,23 +42,50 @@ export default function DashboardPage() {
     React.useState<PropertyTableItem[]>([]);
 
   const handleBookmark = async (propertyId: number) => {
-    const updateCollection = (items: PropertyTableItem[]) =>
-      items.map((item) =>
-        item.id === propertyId
-          ? { ...item, bookmarked: !item.bookmarked }
-          : item,
-      );
-
-    const currentProperty =
+    const current =
       todayPriceChangedProperties.find((item) => item.id === propertyId) ||
       todayApartment31Properties.find((item) => item.id === propertyId);
+
+    if (!current) return;
+
+    const updateCollection = (items: PropertyTableItem[]) =>
+      applyListingMark(
+        items,
+        current.providerId,
+        "bookmarked",
+        !current.bookmarked,
+      );
 
     setTodayPriceChangedProperties((prev) => updateCollection(prev));
     setTodayApartment31Properties((prev) => updateCollection(prev));
 
     await propertiesApi.bookmarkProperty({
       propertyId,
-      bookmarked: !currentProperty?.bookmarked,
+      bookmarked: !current.bookmarked,
+    });
+  };
+
+  const handleDismiss = async (propertyId: number) => {
+    const current =
+      todayPriceChangedProperties.find((item) => item.id === propertyId) ||
+      todayApartment31Properties.find((item) => item.id === propertyId);
+
+    if (!current) return;
+
+    const updateCollection = (items: PropertyTableItem[]) =>
+      applyListingMark(
+        items,
+        current.providerId,
+        "dismissed",
+        !current.dismissed,
+      );
+
+    setTodayPriceChangedProperties((prev) => updateCollection(prev));
+    setTodayApartment31Properties((prev) => updateCollection(prev));
+
+    await propertiesApi.dismissProperty({
+      propertyId,
+      dismissed: !current.dismissed,
     });
   };
 
@@ -270,6 +298,7 @@ export default function DashboardPage() {
             <PropertyTable
               properties={todayApartment31Properties}
               onBookmark={handleBookmark}
+              onDismiss={handleDismiss}
               onRetryAiMetadata={handleRetryAiMetadata}
             />
           )}
@@ -327,6 +356,7 @@ export default function DashboardPage() {
             <PropertyTable
               properties={todayPriceChangedProperties}
               onBookmark={handleBookmark}
+              onDismiss={handleDismiss}
               onRetryAiMetadata={handleRetryAiMetadata}
             />
           )}

@@ -16,6 +16,7 @@ import {
   type PropertyType,
   type UpdatePropertyPayload,
 } from "@/api/properties";
+import { applyListingMark } from "@/lib/listing-marks";
 import { areasApi, type Area } from "@/api/areas";
 import dayjs, { Dayjs } from "dayjs";
 import { AppHeader, WARM_BG, BORDER } from "@/components/AppHeader";
@@ -62,6 +63,7 @@ export default function PropertiesPage() {
   const [furnished, setFurnished] = React.useState<FurnishedFilter>("any");
   const [onlyUnseen, setOnlyUnseen] = React.useState(false);
   const [onlyBookmarked, setOnlyBookmarked] = React.useState(false);
+  const [hideDismissed, setHideDismissed] = React.useState(false);
   const [onlyPriceChanged, setOnlyPriceChanged] = React.useState(false);
   const [onlyUntyped, setOnlyUntyped] = React.useState(false);
   const [onlyUnresolved, setOnlyUnresolved] = React.useState(false);
@@ -95,15 +97,42 @@ export default function PropertiesPage() {
   }, [searchText, search, updateUrl]);
 
   const handleBookmark = async (propertyId: number) => {
+    const current = products.find((p) => p.id === propertyId);
+
+    if (!current) return;
+
     setProducts((prev) =>
-      prev.map((p) =>
-        p.id === propertyId ? { ...p, bookmarked: !p.bookmarked } : p,
+      applyListingMark(
+        prev,
+        current.providerId,
+        "bookmarked",
+        !current.bookmarked,
       ),
     );
 
     await propertiesApi.bookmarkProperty({
-      propertyId: propertyId,
-      bookmarked: !products.find((p) => p.id === propertyId)?.bookmarked,
+      propertyId,
+      bookmarked: !current.bookmarked,
+    });
+  };
+
+  const handleDismiss = async (propertyId: number) => {
+    const current = products.find((p) => p.id === propertyId);
+
+    if (!current) return;
+
+    setProducts((prev) =>
+      applyListingMark(
+        prev,
+        current.providerId,
+        "dismissed",
+        !current.dismissed,
+      ),
+    );
+
+    await propertiesApi.dismissProperty({
+      propertyId,
+      dismissed: !current.dismissed,
     });
   };
 
@@ -240,6 +269,7 @@ export default function PropertiesPage() {
       setFurnished("any");
       setOnlyUnseen(false);
       setOnlyBookmarked(false);
+      setHideDismissed(false);
       setOnlyPriceChanged(false);
       setOnlyUntyped(false);
       setOnlyUnresolved(linkedUnresolved);
@@ -268,6 +298,7 @@ export default function PropertiesPage() {
           isFurnished: furnished === "any" ? undefined : furnished === "yes",
           onlyUnseen,
           onlyBookmarked,
+          hideDismissed,
           onlyPriceChanged,
           onlyUntyped,
           onlyUnresolved,
@@ -296,6 +327,7 @@ export default function PropertiesPage() {
     furnished,
     onlyUnseen,
     onlyBookmarked,
+    hideDismissed,
     onlyPriceChanged,
     onlyUntyped,
     onlyUnresolved,
@@ -388,6 +420,7 @@ export default function PropertiesPage() {
     furnished,
     onlyUnseen,
     onlyBookmarked,
+    hideDismissed,
     onlyPriceChanged,
     onlyUntyped,
     onlyUnresolved,
@@ -403,6 +436,8 @@ export default function PropertiesPage() {
     if (patch.onlyUnseen !== undefined) setOnlyUnseen(patch.onlyUnseen);
     if (patch.onlyBookmarked !== undefined)
       setOnlyBookmarked(patch.onlyBookmarked);
+    if (patch.hideDismissed !== undefined)
+      setHideDismissed(patch.hideDismissed);
     if (patch.onlyPriceChanged !== undefined)
       setOnlyPriceChanged(patch.onlyPriceChanged);
     if (patch.onlyUntyped !== undefined) setOnlyUntyped(patch.onlyUntyped);
@@ -430,6 +465,7 @@ export default function PropertiesPage() {
     setFurnished("any");
     setOnlyUnseen(false);
     setOnlyBookmarked(false);
+    setHideDismissed(false);
     setOnlyPriceChanged(false);
     setOnlyUntyped(false);
     setOnlyUnresolved(false);
@@ -479,6 +515,7 @@ export default function PropertiesPage() {
             <PropertyTable
               properties={products}
               onBookmark={handleBookmark}
+              onDismiss={handleDismiss}
               onRetryAiMetadata={handleRetryAiMetadata}
               areas={areas}
               onUpdateProperty={handleUpdateProperty}
