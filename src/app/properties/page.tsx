@@ -24,6 +24,7 @@ import {
   PropertiesFilterBar,
   type FurnishedFilter,
   type PropertyFilters,
+  type SearchType,
 } from "@/components/PropertiesFilterBar";
 import {
   PropertyTable,
@@ -69,6 +70,7 @@ export default function PropertiesPage() {
   const [onlyUnresolved, setOnlyUnresolved] = React.useState(false);
   const [searchText, setSearchText] = React.useState("");
   const [search, setSearch] = React.useState("");
+  const [searchType, setSearchType] = React.useState<SearchType>("text");
   const [preferencesLoaded, setPreferencesLoaded] = React.useState(false);
 
   const updateUrl = React.useCallback(
@@ -302,7 +304,10 @@ export default function PropertiesPage() {
           onlyPriceChanged,
           onlyUntyped,
           onlyUnresolved,
-          search: search || undefined,
+          search: searchType === "text" ? search || undefined : undefined,
+          id: searchType === "id" ? search || undefined : undefined,
+          providerId:
+            searchType === "providerId" ? search || undefined : undefined,
         });
 
         setProducts(res.data);
@@ -332,6 +337,7 @@ export default function PropertiesPage() {
     onlyUntyped,
     onlyUnresolved,
     search,
+    searchType,
   ]);
 
   React.useEffect(() => {
@@ -447,6 +453,12 @@ export default function PropertiesPage() {
     updateUrl(0);
   };
 
+  const handleSearchTypeChange = (type: SearchType) => {
+    setSearchType(type);
+    setPage(0);
+    updateUrl(0);
+  };
+
   const handleSearchClear = () => {
     setSearchText("");
     setSearch("");
@@ -488,6 +500,8 @@ export default function PropertiesPage() {
         <PropertiesFilterBar
           filters={filters}
           search={searchText}
+          searchType={searchType}
+          onSearchTypeChange={handleSearchTypeChange}
           onSearchChange={setSearchText}
           onSearchClear={handleSearchClear}
           areas={areas}

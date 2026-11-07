@@ -23,3 +23,7 @@ _Avoid_: User, admin
 **Search**:
 A free-text box above the Property Listing table. The Operator types words, and only Property Listings whose title or description contains every word are shown, ignoring case and accents. It is not remembered between visits.
 _Avoid_: Query, keyword filter, find
+
+**Search Type**:
+A selector inside the Search box that sets how its text is read: `Text` (the default, the Search above), `ID`, or `Provider ID`. `ID` and `Provider ID` are exact: the whole box must equal a Capture's id or the listing's provider id. An `ID` search also finds a listing through an older Capture. It exists so the Operator can find a listing to update when its title and description are no help. Like Search, it combines with every other filter. It is not remembered between visits.
+_Avoid_: Query, lookup, search mode

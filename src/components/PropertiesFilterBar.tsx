@@ -36,6 +36,20 @@ import { ACCENT, BORDER, WARM_BG } from "@/components/AppHeader";
 
 export type FurnishedFilter = "any" | "yes" | "no";
 
+export type SearchType = "text" | "id" | "providerId";
+
+const SEARCH_TYPE_OPTIONS: { value: SearchType; label: string }[] = [
+  { value: "text", label: "Text" },
+  { value: "id", label: "ID" },
+  { value: "providerId", label: "Provider ID" },
+];
+
+const SEARCH_PLACEHOLDERS: Record<SearchType, string> = {
+  text: "Search title or description",
+  id: "Exact ID",
+  providerId: "Exact Provider ID",
+};
+
 export interface PropertyFilters {
   fromDate: Dayjs | null;
   toDate: Dayjs | null;
@@ -143,15 +157,24 @@ interface SearchInputProps {
   value: string;
   onChange: (value: string) => void;
   onClear: () => void;
+  searchType: SearchType;
+  onSearchTypeChange: (type: SearchType) => void;
   sx?: object;
 }
 
-function SearchInput({ value, onChange, onClear, sx }: SearchInputProps) {
+function SearchInput({
+  value,
+  onChange,
+  onClear,
+  searchType,
+  onSearchTypeChange,
+  sx,
+}: SearchInputProps) {
   return (
     <TextField
       value={value}
       onChange={(event) => onChange(event.target.value)}
-      placeholder="Search title or description"
+      placeholder={SEARCH_PLACEHOLDERS[searchType]}
       size="small"
       sx={sx}
       slotProps={{
@@ -160,6 +183,23 @@ function SearchInput({ value, onChange, onClear, sx }: SearchInputProps) {
           sx: controlSx,
           startAdornment: (
             <InputAdornment position="start">
+              <Select
+                value={searchType}
+                onChange={(event) =>
+                  onSearchTypeChange(event.target.value as SearchType)
+                }
+                variant="standard"
+                disableUnderline
+                aria-label="Search type"
+                inputProps={{ "aria-label": "Search type" }}
+                sx={{ fontSize: 13, mr: 1, color: "text.secondary" }}
+              >
+                {SEARCH_TYPE_OPTIONS.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
               <SearchIcon fontSize="small" />
             </InputAdornment>
           ),
@@ -284,6 +324,8 @@ const EMPTY_FILTERS: PropertyFilters = {
 interface PropertiesFilterBarProps {
   filters: PropertyFilters;
   search: string;
+  searchType: SearchType;
+  onSearchTypeChange: (type: SearchType) => void;
   onSearchChange: (value: string) => void;
   onSearchClear: () => void;
   areas: Area[];
@@ -440,6 +482,8 @@ function FilterFields({
 export function PropertiesFilterBar({
   filters,
   search,
+  searchType,
+  onSearchTypeChange,
   onSearchChange,
   onSearchClear,
   areas,
@@ -612,7 +656,9 @@ export function PropertiesFilterBar({
           value={search}
           onChange={onSearchChange}
           onClear={onSearchClear}
-          sx={{ width: 260 }}
+          searchType={searchType}
+          onSearchTypeChange={onSearchTypeChange}
+          sx={{ width: 340 }}
         />
         <FilterFields
           filters={filters}
@@ -647,6 +693,8 @@ export function PropertiesFilterBar({
           value={search}
           onChange={onSearchChange}
           onClear={onSearchClear}
+          searchType={searchType}
+          onSearchTypeChange={onSearchTypeChange}
           sx={{ flexBasis: "100%" }}
         />
         <Button

@@ -90,6 +90,9 @@ export interface GetPaginatedPropertiesParams {
   onlyUntyped?: boolean;
   onlyUnresolved?: boolean;
   search?: string;
+  // Exact lookups: the id of any Capture, and the listing's providerId.
+  id?: string;
+  providerId?: string;
 }
 
 export interface GetPropertiesByProviderIdParams {
