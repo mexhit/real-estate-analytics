@@ -36,6 +36,8 @@ export interface Property {
   price: string;
   priceAmount?: number | null;
   priceCurrency?: string | null;
+  // Euro Price: the only price shown and used for calculations.
+  priceEur?: number | null;
   squareMeters?: number | null;
   areaAvgPricePerSqm?: number | null;
   areaAvgPriceCurrency?: string | null;
@@ -52,6 +54,8 @@ export interface Property {
   lastPostedAt?: string;
   firstPrice?: string;
   lastPrice?: string;
+  firstPriceEur?: number | null;
+  lastPriceEur?: number | null;
 }
 
 export interface PaginatedResponse<T> {

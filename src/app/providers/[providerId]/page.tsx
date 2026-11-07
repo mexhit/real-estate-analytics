@@ -27,7 +27,7 @@ interface Property {
   title: string;
   description: string;
   price: string;
-  priceAmount?: number | null;
+  priceEur?: number | null;
   squareMeters?: number | null;
   url: string;
   createdAt: number | string;
@@ -98,20 +98,20 @@ export default function ProviderPropertiesPage() {
   };
 
   const getPricePerSquareMeter = (
-    priceAmount: number | null | undefined,
+    priceEur: number | null | undefined,
     squareMeters: number | null | undefined,
   ) => {
     if (
-      priceAmount == null ||
+      priceEur == null ||
       squareMeters == null ||
-      isNaN(priceAmount) ||
+      isNaN(priceEur) ||
       isNaN(squareMeters) ||
       squareMeters <= 0
     ) {
       return null;
     }
 
-    return priceAmount / squareMeters;
+    return priceEur / squareMeters;
   };
 
   if (loading) {
@@ -174,7 +174,7 @@ export default function ProviderPropertiesPage() {
             <TableBody>
               {properties.map((p) => {
                 const pricePerSquareMeter = getPricePerSquareMeter(
-                  p.priceAmount,
+                  p.priceEur,
                   p.squareMeters,
                 );
 
@@ -197,7 +197,7 @@ export default function ProviderPropertiesPage() {
                     <TableCell>{p.description}</TableCell>
                     <TableCell>
                       <Typography variant="body2" fontWeight={600}>
-                        {p.price}
+                        {p.priceEur != null ? formatPrice(p.priceEur) : p.price}
                       </Typography>
                       {pricePerSquareMeter != null && (
                         <Typography variant="caption" color="text.secondary">
@@ -246,10 +246,10 @@ export default function ProviderPropertiesPage() {
               display: { xs: "none", sm: "block" },
             },
             "& .MuiTablePagination-actions button": {
-                width: { xs: 44, sm: "auto" },
-                height: { xs: 44, sm: "auto" },
-              },
-              "& .MuiTablePagination-spacer": {
+              width: { xs: 44, sm: "auto" },
+              height: { xs: 44, sm: "auto" },
+            },
+            "& .MuiTablePagination-spacer": {
               display: { xs: "none", sm: "block" },
             },
             "& .MuiTablePagination-displayedRows": {

@@ -8,6 +8,10 @@ A reporting frontend for an operator monitoring scraped real-estate listings in 
 A single advertised real-estate offer scraped from a source, with its price, size, and resolved Area.
 _Avoid_: Property, listing, ad, post
 
+**Euro Price**:
+A Property Listing's price in euros, calculated by the backend from the price the source showed. It is the only price the Operator sees and the one every per-m² figure and price change uses. A Property Listing the backend could not price in euros (unsupported or missing currency) falls back to the price as the source showed it.
+_Avoid_: Converted price, price in EUR
+
 **Area**:
 A named neighborhood or zone (e.g. "Blloku") that every Property Listing is resolved to.
 _Avoid_: Neighborhood, zone, district, location

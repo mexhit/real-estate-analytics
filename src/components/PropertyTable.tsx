@@ -50,6 +50,7 @@ export interface PropertyTableItem {
   price: string;
   priceAmount?: number | null;
   priceCurrency?: string | null;
+  priceEur?: number | null;
   squareMeters?: number | null;
   areaAvgPricePerSqm?: number | null;
   areaAvgPriceCurrency?: string | null;
@@ -66,6 +67,8 @@ export interface PropertyTableItem {
   lastPostedAt?: string;
   firstPrice?: string;
   lastPrice?: string;
+  firstPriceEur?: number | null;
+  lastPriceEur?: number | null;
 }
 
 interface PropertyTableProps {
@@ -108,30 +111,20 @@ function formatPrice(value: number | null | undefined): string {
 }
 
 function getPricePerSquareMeter(
-  priceAmount: number | null | undefined,
+  priceEur: number | null | undefined,
   squareMeters: number | null | undefined,
 ): number | null {
   if (
-    priceAmount == null ||
+    priceEur == null ||
     squareMeters == null ||
-    isNaN(priceAmount) ||
+    isNaN(priceEur) ||
     isNaN(squareMeters) ||
     squareMeters <= 0
   ) {
     return null;
   }
 
-  return priceAmount / squareMeters;
-}
-
-function parsePriceToNumber(price: string | null | undefined): number | null {
-  if (!price) return null;
-
-  const numeric = price.replace(/[^\d]/g, "");
-
-  if (!numeric) return null;
-
-  return Number(numeric);
+  return priceEur / squareMeters;
 }
 
 function formatPeriod(
@@ -192,12 +185,9 @@ function getPricePositionInfo(
 }
 
 function getPriceChangeInfo(
-  firstPrice: string | null | undefined,
-  lastPrice: string | null | undefined,
+  firstPriceNum: number | null | undefined,
+  lastPriceNum: number | null | undefined,
 ) {
-  const firstPriceNum = parsePriceToNumber(firstPrice);
-  const lastPriceNum = parsePriceToNumber(lastPrice);
-
   if (firstPriceNum != null && lastPriceNum != null) {
     if (lastPriceNum > firstPriceNum) {
       return {
@@ -358,11 +348,11 @@ interface PriceBlockProps {
 
 function PriceBlock({ property, showPricePosition, align }: PriceBlockProps) {
   const priceChange = getPriceChangeInfo(
-    property.firstPrice,
-    property.lastPrice,
+    property.firstPriceEur,
+    property.lastPriceEur,
   );
   const pricePerSquareMeter = getPricePerSquareMeter(
-    property.priceAmount,
+    property.priceEur,
     property.squareMeters,
   );
   const pricePositionInfo = getPricePositionInfo(
@@ -387,7 +377,7 @@ function PriceBlock({ property, showPricePosition, align }: PriceBlockProps) {
             color="text.secondary"
             sx={{ textDecoration: "line-through" }}
           >
-            {property.firstPrice}
+            {formatPrice(property.firstPriceEur)}
           </Typography>
           <Chip
             label={priceChange.diffLabel}
@@ -398,7 +388,9 @@ function PriceBlock({ property, showPricePosition, align }: PriceBlockProps) {
         </Box>
       )}
       <Typography fontWeight={700} fontSize={18}>
-        {property.price}
+        {property.priceEur != null
+          ? formatPrice(property.priceEur)
+          : property.price}
       </Typography>
       {(pricePerSquareMeter != null ||
         (showPricePosition && pricePositionInfo)) && (

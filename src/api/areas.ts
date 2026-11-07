@@ -37,7 +37,7 @@ export interface DistributionListing {
   id: number;
   providerId: string;
   title: string;
-  priceAmount: number;
+  priceEur: number;
   squareMeters: number;
   pricePerSqm: number;
 }
@@ -94,8 +94,7 @@ class AreasApi {
     return apiClient
       .get(`/areas/${areaId}/contributing-listings/distribution`)
       .then(
-        (response: { data: ContributingListingsDistribution }) =>
-          response.data,
+        (response: { data: ContributingListingsDistribution }) => response.data,
       );
   }
 
